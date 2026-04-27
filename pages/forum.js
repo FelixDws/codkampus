@@ -52,9 +52,10 @@ export default function Forum() {
 
     init();
 
-    // 🔥 REALTIME FIX (ANTI REFRESH)
     const channel = supabase
       .channel("realtime-posts")
+
+      // INSERT
       .on(
         "postgres_changes",
         {
@@ -62,7 +63,7 @@ export default function Forum() {
           schema: "public",
           table: "posts",
         },
-        async (payload) => {
+        (payload) => {
           const newPost = payload.new;
 
           setPosts((prev) => {
@@ -74,6 +75,21 @@ export default function Forum() {
           scrollToBottom();
         }
       )
+
+      // DELETE REALTIME
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "posts",
+        },
+        (payload) => {
+          const id = payload.old.id;
+          setPosts((prev) => prev.filter((p) => p.id !== id));
+        }
+      )
+
       .subscribe((status) => {
         console.log("Realtime:", status);
       });
@@ -110,6 +126,14 @@ export default function Forum() {
   };
 
   // =====================
+  // DELETE MESSAGE
+  // =====================
+  const deleteMessage = async (id) => {
+    await supabase.from("posts").delete().eq("id", id);
+    setPosts((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  // =====================
   // SEND MESSAGE
   // =====================
   const sendMessage = async () => {
@@ -131,13 +155,26 @@ export default function Forum() {
       setText("");
       setReplyTo(null);
 
-      // update exp tetap jalan
       await supabase
         .from("users")
         .update({ exp: exp + 10 })
         .eq("id", user.id);
 
       setExp((prev) => prev + 10);
+
+      // 🔥 AUTO LIMIT 20 CHAT
+      const { data: allPosts } = await supabase
+        .from("posts")
+        .select("id")
+        .order("id", { ascending: true });
+
+      if (allPosts.length > 20) {
+        const idsToDelete = allPosts
+          .slice(0, allPosts.length - 20)
+          .map((p) => p.id);
+
+        await supabase.from("posts").delete().in("id", idsToDelete);
+      }
     }
 
     setLoading(false);
@@ -156,9 +193,7 @@ export default function Forum() {
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-[#e6fffa] to-[#fef3c7]">
 
-      {/* NAVBAR STICKY */}
       <div className="sticky top-0 z-50 bg-[#0F766E] text-white px-4 py-3">
-
         <div className="flex items-center justify-between">
 
           <button
@@ -171,7 +206,6 @@ export default function Forum() {
           <div className="text-center">
             <h1 className="font-bold">💬 Forum CODKampus</h1>
 
-            {/* EXP BAR */}
             <div className="w-32 h-2 bg-white/20 rounded-full mt-1 overflow-hidden">
               <div
                 className="h-full bg-[#F59E0B]"
@@ -186,7 +220,6 @@ export default function Forum() {
         </div>
       </div>
 
-      {/* CHAT */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-3">
 
         {posts.map((p, i) => {
@@ -212,7 +245,6 @@ export default function Forum() {
                   </p>
                 )}
 
-                {/* REPLY PREVIEW */}
                 {parent && (
                   <div className="text-xs bg-black/10 p-2 rounded mb-1">
                     {parent.content}
@@ -225,13 +257,23 @@ export default function Forum() {
                   {formatTime(p.created_at)}
                 </p>
 
-                {/* REPLY BUTTON */}
-                <button
-                  onClick={() => setReplyTo(p)}
-                  className="text-xs text-blue-400 mt-1"
-                >
-                  Reply
-                </button>
+                <div className="flex gap-2 mt-1">
+                  <button
+                    onClick={() => setReplyTo(p)}
+                    className="text-xs text-blue-400"
+                  >
+                    Reply
+                  </button>
+
+                  {isMe && (
+                    <button
+                      onClick={() => deleteMessage(p.id)}
+                      className="text-xs text-red-400"
+                    >
+                      Hapus
+                    </button>
+                  )}
+                </div>
 
               </div>
             </div>
@@ -241,7 +283,6 @@ export default function Forum() {
         <div ref={bottomRef}></div>
       </div>
 
-      {/* REPLY BAR */}
       {replyTo && (
         <div className="px-3 py-2 bg-yellow-100 text-sm flex justify-between">
           <span>Reply: {replyTo.content.slice(0, 30)}...</span>
@@ -249,7 +290,6 @@ export default function Forum() {
         </div>
       )}
 
-      {/* INPUT */}
       <div className="p-3 flex gap-2 bg-white border-t">
         <input
           className="flex-1 p-3 rounded-full border"
