@@ -10,14 +10,31 @@ export default function Profile() {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // ======================
+  // LOAD PROFILE (FIX 406)
+  // ======================
   const loadProfile = async (u) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("users")
       .select("*")
       .eq("id", u.id)
-      .single();
+      .maybeSingle(); // 🔥 FIX
 
-    if (!data) return;
+    // 🔥 kalau belum ada → auto insert
+    if (!data) {
+      await supabase.from("users").insert([
+        {
+          id: u.id,
+          email: u.email,
+          name: u.email.split("@")[0],
+          exp: 0,
+        },
+      ]);
+
+      setName(u.email.split("@")[0]);
+      setBio("");
+      return;
+    }
 
     setName(data.name || "");
     setBio(data.bio || "");
@@ -35,6 +52,9 @@ export default function Profile() {
     });
   }, []);
 
+  // ======================
+  // UPLOAD AVATAR
+  // ======================
   const uploadAvatar = async () => {
     if (!avatarFile || !user) return avatarUrl;
 
@@ -57,6 +77,9 @@ export default function Profile() {
     return data.publicUrl;
   };
 
+  // ======================
+  // SAVE PROFILE (FIX 406)
+  // ======================
   const saveProfile = async () => {
     if (!user) return alert("Belum login");
 
@@ -77,17 +100,17 @@ export default function Profile() {
       })
       .eq("id", user.id)
       .select()
-      .single();
+      .maybeSingle(); // 🔥 FIX
 
     if (error) {
-      alert("Gagal update");
+      alert(error.message);
       setLoading(false);
       return;
     }
 
-    setName(data.name || "");
-    setBio(data.bio || "");
-    setAvatarUrl(data.avatar_url || "");
+    setName(data?.name || "");
+    setBio(data?.bio || "");
+    setAvatarUrl(data?.avatar_url || "");
 
     setLoading(false);
     alert("Profil berhasil disimpan!");
@@ -95,13 +118,9 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#e6fffa] to-[#fef3c7]">
-
-      {/* NAVBAR GLOBAL (SUDAH ADA BACK) */}
       <Navbar />
 
       <div className="max-w-xl mx-auto px-6 py-10">
-
-        {/* CARD */}
         <div className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100">
 
           <h1 className="text-3xl font-bold text-[#0F766E] mb-6 text-center">
@@ -120,7 +139,6 @@ export default function Profile() {
                 className="w-28 h-28 rounded-full object-cover border-4 border-[#0F766E]"
               />
 
-              {/* ONLINE DOT */}
               <span className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></span>
             </div>
 
@@ -143,7 +161,6 @@ export default function Profile() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full px-4 py-3 border rounded-xl mt-1 focus:ring-2 focus:ring-[#0F766E] outline-none"
-                placeholder="Nama kamu..."
               />
             </div>
 
@@ -153,7 +170,6 @@ export default function Profile() {
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 className="w-full px-4 py-3 border rounded-xl mt-1 focus:ring-2 focus:ring-[#0F766E] outline-none"
-                placeholder="Ceritakan tentang kamu..."
               />
             </div>
 
@@ -165,9 +181,7 @@ export default function Profile() {
             </button>
 
           </div>
-
         </div>
-
       </div>
     </div>
   );
