@@ -10,7 +10,6 @@ export default function Register() {
   const router = useRouter();
 
   const register = async () => {
-    // 🔥 VALIDASI
     if (!email || !password) {
       alert("Isi semua!");
       return;
@@ -24,23 +23,38 @@ export default function Register() {
     try {
       setLoading(true);
 
+      // 🔥 SIGN UP
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password: password.trim(),
       });
 
-      // 🔥 DEBUG (WAJIB SEKARANG)
-      console.log("REGISTER RESULT:", data, error);
+      console.log("SIGNUP RESULT:", data, error);
 
-      // ❌ ERROR
       if (error) {
         alert(error.message);
         return;
       }
 
-      // ❌ EDGE CASE
-      if (!data || !data.user) {
-        alert("Gagal membuat akun, coba lagi");
+      if (!data?.user) {
+        alert("Gagal membuat akun");
+        return;
+      }
+
+      // 🔥 INSERT KE TABLE USERS (INI FIX 500)
+      const { error: insertError } = await supabase.from("users").insert([
+        {
+          id: data.user.id,
+          email: data.user.email,
+          name: data.user.email.split("@")[0],
+          exp: 0,
+        },
+      ]);
+
+      console.log("INSERT RESULT:", insertError);
+
+      if (insertError) {
+        alert("Akun dibuat tapi gagal simpan profil");
         return;
       }
 
@@ -50,13 +64,12 @@ export default function Register() {
 
     } catch (err) {
       console.error("REGISTER ERROR:", err);
-      alert("Terjadi kesalahan, coba lagi");
+      alert("Terjadi kesalahan besar");
     } finally {
       setLoading(false);
     }
   };
 
-  // 🔥 ENTER SUPPORT
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       register();
@@ -68,12 +81,10 @@ export default function Register() {
 
       <div className="bg-white w-full max-w-md p-8 rounded-3xl shadow-lg border">
 
-        {/* TITLE */}
         <h1 className="text-3xl font-bold text-center text-[#0F766E] mb-6">
           📝 Daftar CODKampus
         </h1>
 
-        {/* EMAIL */}
         <input
           placeholder="Email"
           value={email}
@@ -83,7 +94,6 @@ export default function Register() {
           className="w-full mb-4 px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#0F766E] outline-none"
         />
 
-        {/* PASSWORD */}
         <input
           type="password"
           placeholder="Password"
@@ -94,7 +104,6 @@ export default function Register() {
           className="w-full mb-6 px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#0F766E] outline-none"
         />
 
-        {/* BUTTON */}
         <button
           type="button"
           onClick={register}
@@ -104,7 +113,6 @@ export default function Register() {
           {loading ? "Loading..." : "Daftar"}
         </button>
 
-        {/* FOOTER */}
         <p className="text-center text-sm text-gray-500 mt-4">
           Sudah punya akun?{" "}
           <span
