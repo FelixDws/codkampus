@@ -1,59 +1,91 @@
 import { useState, useEffect, useRef } from "react";
 import supabase from "../lib/supabase";
-import Link from "next/link";
 import { useRouter } from "next/router";
 
 export default function Forum() {
-  const [mounted, setMounted] = useState(false);
   const [posts, setPosts] = useState([]);
   const [profiles, setProfiles] = useState({});
   const [text, setText] = useState("");
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [exp, setExp] = useState(0);
-  const [replyTo, setReplyTo] = useState(null);
 
   const bottomRef = useRef(null);
   const router = useRouter();
 
-  const level = Math.floor(exp / 50) + 1;
-  const progress = exp % 50;
+  // 🔥 BACK KE MENU UTAMA
+  const handleBack = () => {
+    router.push("/");
+  };
 
   const scrollToBottom = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const formatTime = (date) => {
-    return new Date(date).toLocaleTimeString("id-ID", {
+  const formatTime = (date) =>
+    new Date(date).toLocaleTimeString("id-ID", {
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
-
-  const findParent = (id) => posts.find((p) => p.id === id);
 
   // =====================
-  // INIT + REALTIME
+  // INIT
   // =====================
   useEffect(() => {
-    setMounted(true);
-
-    supabase.auth.getSession().then(async ({ data }) => {
+    const init = async () => {
+      const { data } = await supabase.auth.getSession();
       const u = data.session?.user;
+
+      if (!u) {
+        router.push("/login");
+        return;
+      }
+
       setUser(u);
 
-      if (u) getUserExp(u.id);
-    });
+      // ambil profile sendiri
+      const { data: me } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", u.id)
+        .single();
 
-    getPosts();
+      if (me) {
+        setProfiles((prev) => ({ ...prev, [me.id]: me }));
+        setExp(me.exp || 0);
+      }
 
+      await getPosts();
+    };
+
+    init();
+
+    // 🔥 REALTIME CHAT
     const channel = supabase
       .channel("chat")
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "posts" },
-        (payload) => {
-          setPosts((prev) => [...prev, payload.new]);
+        async (payload) => {
+          const newPost = payload.new;
+
+          setPosts((prev) => [...prev, newPost]);
+
+          // ambil profile kalau belum ada
+          if (!profiles[newPost.user_id]) {
+            const { data } = await supabase
+              .from("users")
+              .select("*")
+              .eq("id", newPost.user_id)
+              .single();
+
+            if (data) {
+              setProfiles((prev) => ({
+                ...prev,
+                [data.id]: data,
+              }));
+            }
+          }
         }
       )
       .subscribe();
@@ -65,6 +97,9 @@ export default function Forum() {
     scrollToBottom();
   }, [posts]);
 
+  // =====================
+  // GET POSTS
+  // =====================
   const getPosts = async () => {
     const { data } = await supabase
       .from("posts")
@@ -86,43 +121,39 @@ export default function Forum() {
     setProfiles(map);
   };
 
-  const getUserExp = async (id) => {
-    const { data } = await supabase
-      .from("users")
-      .select("exp")
-      .eq("id", id)
-      .single();
-
-    if (data) setExp(data.exp);
-  };
-
+  // =====================
+  // SEND MESSAGE
+  // =====================
   const sendMessage = async () => {
     if (!text.trim() || !user) return;
 
     setLoading(true);
 
-    await supabase.from("posts").insert([
-      {
-        content: text,
-        user_email: user.email,
-        user_id: user.id,
-        parent_id: replyTo?.id || null,
-      },
-    ]);
+    const newPost = {
+      content: text,
+      user_email: user.email,
+      user_id: user.id,
+      created_at: new Date().toISOString(),
+    };
 
-    // tambah exp
+    // 🔥 tampil langsung (biar gak perlu refresh)
+    setPosts((prev) => [...prev, newPost]);
+
+    setText("");
+
+    await supabase.from("posts").insert([newPost]);
+
+    // update exp
     await supabase
       .from("users")
       .update({ exp: exp + 10 })
       .eq("id", user.id);
 
-    setText("");
-    setReplyTo(null);
-    getUserExp(user.id);
+    setExp((prev) => prev + 10);
+
     setLoading(false);
   };
 
-  // 🔥 FIX ENTER
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -130,47 +161,35 @@ export default function Forum() {
     }
   };
 
-  if (!mounted) return null;
-
+  // =====================
+  // UI
+  // =====================
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-[#e6fffa] to-[#fef3c7]">
 
       {/* HEADER */}
       <div className="bg-[#0F766E] text-white px-4 py-3 flex items-center gap-3">
         <button
-          onClick={() => router.back()}
+          onClick={handleBack}
           className="bg-white/20 px-3 py-1 rounded-full"
         >
           ←
         </button>
 
-        <div className="flex-1">
+        <div>
           <h1 className="font-bold">💬 Forum CODKampus</h1>
-          <p className="text-xs opacity-80">
-            Lv {level} • {progress}/50 EXP
-          </p>
-
-          {/* 🔥 PROGRESS BAR */}
-          <div className="w-full bg-white/20 h-2 rounded mt-1">
-            <div
-              className="bg-yellow-400 h-2 rounded"
-              style={{ width: `${(progress / 50) * 100}%` }}
-            ></div>
-          </div>
+          <p className="text-xs opacity-80">EXP: {exp}</p>
         </div>
       </div>
 
       {/* CHAT */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-        {posts.map((p) => {
+        {posts.map((p, i) => {
           const isMe = p.user_id === user?.id;
           const profile = profiles[p.user_id];
-          const parent = p.parent_id ? findParent(p.parent_id) : null;
-          const parentUser = parent ? profiles[parent.user_id] : null;
 
           return (
-            <div key={p.id} className={`flex ${isMe ? "justify-end" : ""}`}>
-
+            <div key={i} className={`flex ${isMe ? "justify-end" : ""}`}>
               {!isMe && (
                 <img
                   src={profile?.avatar_url || "https://via.placeholder.com/40"}
@@ -183,35 +202,17 @@ export default function Forum() {
                   isMe ? "bg-[#0F766E] text-white" : "bg-white"
                 }`}
               >
-
                 {!isMe && (
                   <p className="text-xs font-bold text-[#0F766E]">
                     {profile?.name || "User"}
                   </p>
                 )}
 
-                {/* REPLY FIX */}
-                {parent && (
-                  <div
-                    className={`text-xs mb-2 pl-2 border-l-4 ${
-                      isMe
-                        ? "border-white/50 text-white/80"
-                        : "border-[#0F766E] text-gray-600"
-                    }`}
-                  >
-                    <p className="font-semibold">
-                      {parentUser?.name || "User"}
-                    </p>
-                    <p className="truncate">{parent.content}</p>
-                  </div>
-                )}
-
                 <p>{p.content}</p>
 
-                <div className="text-xs flex justify-between mt-2 opacity-70">
-                  <button onClick={() => setReplyTo(p)}>Reply</button>
-                  <span>{formatTime(p.created_at)}</span>
-                </div>
+                <p className="text-xs mt-1 opacity-70">
+                  {formatTime(p.created_at)}
+                </p>
               </div>
             </div>
           );
@@ -221,19 +222,12 @@ export default function Forum() {
       </div>
 
       {/* INPUT */}
-      <div className="p-3 flex gap-2 bg-white border-t relative">
-
-        {replyTo && (
-          <div className="absolute bottom-14 left-4 text-xs bg-white border px-3 py-1 rounded-full shadow">
-            Reply ke: {replyTo.content.slice(0, 20)}...
-          </div>
-        )}
-
+      <div className="p-3 flex gap-2 bg-white border-t">
         <input
           className="flex-1 p-3 rounded-full border"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          onKeyDown={handleKeyDown} // 🔥 FIX ENTER
+          onKeyDown={handleKeyDown}
           placeholder="Tulis sesuatu..."
         />
 
