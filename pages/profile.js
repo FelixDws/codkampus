@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar";
 
 export default function Profile() {
   const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [avatarFile, setAvatarFile] = useState(null);
@@ -11,7 +12,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(false);
 
   // ======================
-  // LOAD PROFILE (AUTO FIX USER)
+  // LOAD PROFILE (CLEAN)
   // ======================
   const loadProfile = async (u) => {
     const { data } = await supabase
@@ -20,24 +21,27 @@ export default function Profile() {
       .eq("id", u.id)
       .maybeSingle();
 
-    // 🔥 kalau belum ada → langsung bikin
+    // kalau belum ada → bikin
     if (!data) {
       const newUser = {
         id: u.id,
         email: u.email,
         name: u.email.split("@")[0],
         bio: "",
+        avatar_url: "",
         exp: 0,
       };
 
       await supabase.from("users").insert([newUser]);
 
+      setProfile(newUser);
       setName(newUser.name);
-      setBio("");
-      setAvatarUrl("");
+      setBio(newUser.bio);
+      setAvatarUrl(newUser.avatar_url);
       return;
     }
 
+    setProfile(data);
     setName(data.name || "");
     setBio(data.bio || "");
     setAvatarUrl(data.avatar_url || "");
@@ -63,17 +67,13 @@ export default function Profile() {
   const uploadAvatar = async () => {
     if (!avatarFile || !user) return avatarUrl;
 
-    const fileExt = avatarFile.name.split(".").pop();
-    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+    const fileName = `${user.id}/${Date.now()}.${avatarFile.name.split(".").pop()}`;
 
     const { error } = await supabase.storage
       .from("avatars")
       .upload(fileName, avatarFile);
 
-    if (error) {
-      alert("Upload gagal");
-      return avatarUrl;
-    }
+    if (error) return avatarUrl;
 
     const { data } = supabase.storage
       .from("avatars")
@@ -83,10 +83,10 @@ export default function Profile() {
   };
 
   // ======================
-  // SAVE PROFILE (PAKAI UPSERT)
+  // SAVE PROFILE (UPSERT)
   // ======================
   const saveProfile = async () => {
-    if (!user) return alert("Belum login");
+    if (!user) return;
 
     setLoading(true);
 
@@ -96,26 +96,21 @@ export default function Profile() {
       finalAvatar = await uploadAvatar();
     }
 
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("users")
       .upsert([
         {
           id: user.id,
           email: user.email,
-          name: name.trim(),
-          bio: bio.trim(),
+          name,
+          bio,
           avatar_url: finalAvatar,
         },
       ])
       .select()
       .maybeSingle();
 
-    if (error) {
-      alert(error.message);
-      setLoading(false);
-      return;
-    }
-
+    setProfile(data);
     setName(data?.name || "");
     setBio(data?.bio || "");
     setAvatarUrl(data?.avatar_url || "");
@@ -124,74 +119,51 @@ export default function Profile() {
     alert("Profil berhasil disimpan!");
   };
 
-  // ======================
-  // UI (TIDAK DIUBAH)
-  // ======================
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#e6fffa] to-[#fef3c7]">
       <Navbar />
 
       <div className="max-w-xl mx-auto px-6 py-10">
-        <div className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100">
+        <div className="bg-white p-8 rounded-3xl shadow-lg">
 
-          <h1 className="text-3xl font-bold text-[#0F766E] mb-6 text-center">
+          <h1 className="text-3xl font-bold text-[#0F766E] text-center mb-6">
             👤 Profil Kamu
           </h1>
 
-          {/* AVATAR */}
           <div className="flex flex-col items-center mb-6">
-            <div className="relative">
-              <img
-                src={
-                  avatarUrl
-                    ? `${avatarUrl}?t=${Date.now()}`
-                    : "https://via.placeholder.com/120"
-                }
-                className="w-28 h-28 rounded-full object-cover border-4 border-[#0F766E]"
-              />
+            <img
+              src={avatarUrl || "https://via.placeholder.com/120"}
+              className="w-28 h-28 rounded-full border-4 border-[#0F766E]"
+            />
 
-              <span className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></span>
-            </div>
-
-            <label className="mt-4 text-sm text-[#0F766E] cursor-pointer hover:underline">
-              Ganti Foto
-              <input
-                type="file"
-                onChange={(e) => setAvatarFile(e.target.files[0])}
-                className="hidden"
-              />
-            </label>
+            <input
+              type="file"
+              onChange={(e) => setAvatarFile(e.target.files[0])}
+              className="mt-3"
+            />
           </div>
 
-          {/* FORM */}
-          <div className="space-y-5">
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Nama"
+            className="w-full mb-4 p-3 border rounded-xl"
+          />
 
-            <div>
-              <label className="text-sm text-gray-600">Nama</label>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-3 border rounded-xl mt-1 focus:ring-2 focus:ring-[#0F766E] outline-none"
-              />
-            </div>
+          <textarea
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            placeholder="Bio"
+            className="w-full mb-4 p-3 border rounded-xl"
+          />
 
-            <div>
-              <label className="text-sm text-gray-600">Bio</label>
-              <textarea
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                className="w-full px-4 py-3 border rounded-xl mt-1 focus:ring-2 focus:ring-[#0F766E] outline-none"
-              />
-            </div>
+          <button
+            onClick={saveProfile}
+            className="w-full bg-[#0F766E] text-white p-3 rounded-full"
+          >
+            {loading ? "Saving..." : "Simpan"}
+          </button>
 
-            <button
-              onClick={saveProfile}
-              className="w-full bg-[#0F766E] text-white py-3 rounded-full font-semibold hover:scale-105 transition"
-            >
-              {loading ? "Menyimpan..." : "💾 Simpan Profil"}
-            </button>
-
-          </div>
         </div>
       </div>
     </div>
