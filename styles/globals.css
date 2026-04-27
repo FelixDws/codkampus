@@ -2,22 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 🔥 GLOBAL FIX (ANTI KEPOTONG KANAN) */
-html, body {
-  overflow-x: hidden;
-}
-
-/* biar padding gak bikin elemen melebar */
-* {
-  box-sizing: border-box;
-}
-
-/* gambar gak keluar layar */
-img {
-  max-width: 100%;
-  height: auto;
-}
-
 @layer components {
 
   /* CONTAINER */
@@ -52,15 +36,6 @@ img {
   /* AVATAR */
   .avatar {
     @apply w-20 h-20 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-[#0F766E];
-  }
-
-  /* 🔥 CHAT (ANTI OVERFLOW) */
-  .chat-me {
-    @apply bg-[#0F766E] text-white break-words max-w-[75%];
-  }
-
-  .chat-other {
-    @apply bg-white break-words max-w-[75%];
   }
 
 }
