@@ -9,14 +9,10 @@ export default function Forum() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [exp, setExp] = useState(0);
+  const [replyTo, setReplyTo] = useState(null);
 
   const bottomRef = useRef(null);
   const router = useRouter();
-
-  // 🔥 BACK KE MENU UTAMA
-  const handleBack = () => {
-    router.push("/");
-  };
 
   const scrollToBottom = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -36,19 +32,15 @@ export default function Forum() {
       const { data } = await supabase.auth.getSession();
       const u = data.session?.user;
 
-      if (!u) {
-        router.push("/login");
-        return;
-      }
+      if (!u) return router.push("/login");
 
       setUser(u);
 
-      // ambil profile sendiri
       const { data: me } = await supabase
         .from("users")
         .select("*")
         .eq("id", u.id)
-        .single();
+        .maybeSingle();
 
       if (me) {
         setProfiles((prev) => ({ ...prev, [me.id]: me }));
@@ -60,32 +52,14 @@ export default function Forum() {
 
     init();
 
-    // 🔥 REALTIME CHAT
+    // REALTIME
     const channel = supabase
       .channel("chat")
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "posts" },
-        async (payload) => {
-          const newPost = payload.new;
-
-          setPosts((prev) => [...prev, newPost]);
-
-          // ambil profile kalau belum ada
-          if (!profiles[newPost.user_id]) {
-            const { data } = await supabase
-              .from("users")
-              .select("*")
-              .eq("id", newPost.user_id)
-              .single();
-
-            if (data) {
-              setProfiles((prev) => ({
-                ...prev,
-                [data.id]: data,
-              }));
-            }
-          }
+        (payload) => {
+          setPosts((prev) => [...prev, payload.new]);
         }
       )
       .subscribe();
@@ -134,16 +108,15 @@ export default function Forum() {
       user_email: user.email,
       user_id: user.id,
       created_at: new Date().toISOString(),
+      parent_id: replyTo?.id || null,
     };
 
-    // 🔥 tampil langsung (biar gak perlu refresh)
     setPosts((prev) => [...prev, newPost]);
-
     setText("");
+    setReplyTo(null);
 
     await supabase.from("posts").insert([newPost]);
 
-    // update exp
     await supabase
       .from("users")
       .update({ exp: exp + 10 })
@@ -167,29 +140,48 @@ export default function Forum() {
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-[#e6fffa] to-[#fef3c7]">
 
-      {/* HEADER */}
-      <div className="bg-[#0F766E] text-white px-4 py-3 flex items-center gap-3">
-        <button
-          onClick={handleBack}
-          className="bg-white/20 px-3 py-1 rounded-full"
-        >
-          ←
-        </button>
+      {/* 🔥 STICKY NAVBAR */}
+      <div className="sticky top-0 z-50 bg-[#0F766E] text-white px-4 py-3">
 
-        <div>
-          <h1 className="font-bold">💬 Forum CODKampus</h1>
-          <p className="text-xs opacity-80">EXP: {exp}</p>
+        <div className="flex items-center justify-between">
+
+          <button
+            onClick={() => router.push("/")}
+            className="bg-white/20 px-3 py-1 rounded-full"
+          >
+            ←
+          </button>
+
+          <div className="text-center">
+            <h1 className="font-bold">💬 Forum CODKampus</h1>
+
+            {/* 🔥 EXP BAR */}
+            <div className="w-32 h-2 bg-white/20 rounded-full mt-1 overflow-hidden">
+              <div
+                className="h-full bg-[#F59E0B]"
+                style={{ width: `${(exp % 50) * 2}%` }}
+              />
+            </div>
+
+            <p className="text-xs opacity-80">EXP: {exp}</p>
+          </div>
+
+          <div className="w-6"></div>
         </div>
       </div>
 
       {/* CHAT */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-3">
+
         {posts.map((p, i) => {
           const isMe = p.user_id === user?.id;
           const profile = profiles[p.user_id];
 
+          const parent = posts.find(x => x.id === p.parent_id);
+
           return (
             <div key={i} className={`flex ${isMe ? "justify-end" : ""}`}>
+
               {!isMe && (
                 <img
                   src={profile?.avatar_url || "https://via.placeholder.com/40"}
@@ -197,15 +189,19 @@ export default function Forum() {
                 />
               )}
 
-              <div
-                className={`max-w-xs p-3 rounded-2xl shadow ${
-                  isMe ? "bg-[#0F766E] text-white" : "bg-white"
-                }`}
-              >
+              <div className={`max-w-[75%] break-words p-3 rounded-2xl shadow ${isMe ? "bg-[#0F766E] text-white" : "bg-white"}`}>
+
                 {!isMe && (
                   <p className="text-xs font-bold text-[#0F766E]">
                     {profile?.name || "User"}
                   </p>
+                )}
+
+                {/* 🔥 REPLY PREVIEW */}
+                {parent && (
+                  <div className="text-xs bg-black/10 p-2 rounded mb-1">
+                    {parent.content}
+                  </div>
                 )}
 
                 <p>{p.content}</p>
@@ -213,6 +209,15 @@ export default function Forum() {
                 <p className="text-xs mt-1 opacity-70">
                   {formatTime(p.created_at)}
                 </p>
+
+                {/* 🔥 REPLY BUTTON */}
+                <button
+                  onClick={() => setReplyTo(p)}
+                  className="text-xs text-blue-400 mt-1"
+                >
+                  Reply
+                </button>
+
               </div>
             </div>
           );
@@ -220,6 +225,14 @@ export default function Forum() {
 
         <div ref={bottomRef}></div>
       </div>
+
+      {/* 🔥 REPLY BAR */}
+      {replyTo && (
+        <div className="px-3 py-2 bg-yellow-100 text-sm flex justify-between">
+          <span>Reply: {replyTo.content.slice(0, 30)}...</span>
+          <button onClick={() => setReplyTo(null)}>❌</button>
+        </div>
+      )}
 
       {/* INPUT */}
       <div className="p-3 flex gap-2 bg-white border-t">
