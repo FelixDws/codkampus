@@ -13,15 +13,12 @@ export default function Market() {
   const [loading, setLoading] = useState(false);
 
   const createUserIfNotExist = async (u) => {
-    await supabase.from("users").upsert(
-      {
-        id: u.id,
-        email: u.email,
-        name: u.email.split("@")[0],
-        exp: 0,
-      },
-      { onConflict: "id" }
-    );
+    await supabase.from("users").upsert({
+      id: u.id,
+      email: u.email,
+      name: u.email.split("@")[0],
+      exp: 0,
+    });
   };
 
   const getItems = async () => {
@@ -33,9 +30,7 @@ export default function Market() {
     const clean = data || [];
     setItems(clean);
 
-    const userIds = [
-      ...new Set(clean.map((i) => i.user_id).filter(Boolean)),
-    ];
+    const userIds = [...new Set(clean.map((i) => i.user_id).filter(Boolean))];
 
     if (userIds.length === 0) return;
 
@@ -45,10 +40,7 @@ export default function Market() {
       .in("id", userIds);
 
     const map = {};
-    users?.forEach((u) => {
-      map[u.id] = u;
-    });
-
+    users?.forEach((u) => (map[u.id] = u));
     setProfiles(map);
   };
 
@@ -75,15 +67,13 @@ export default function Market() {
 
     setLoading(true);
 
-    const { error } = await supabase
-      .from("market")
-      .insert([
-        {
-          name: name.trim(),
-          price: Number(price),
-          user_id: user.id,
-        },
-      ]);
+    const { error } = await supabase.from("market").insert([
+      {
+        name: name.trim(),
+        price: Number(price),
+        user_id: user.id,
+      },
+    ]);
 
     if (!error) {
       setName("");
@@ -107,15 +97,13 @@ export default function Market() {
         .from("users")
         .select("*")
         .eq("id", item.user_id)
-        .single();
+        .maybeSingle(); // 🔥 FIX
 
       seller = data;
     }
 
-    let sellerName =
-      seller?.name ||
-      seller?.email?.split("@")[0] ||
-      "penjual";
+    const sellerName =
+      seller?.name || seller?.email?.split("@")[0] || "penjual";
 
     await supabase.from("posts").insert([
       {
@@ -137,14 +125,12 @@ export default function Market() {
 
       <Navbar />
 
-      <div className="max-w-5xl mx-auto px-6 py-10">
+      <div className="container-main">
 
         {/* HEADER */}
-        <div className="mb-6 text-center">
-          <h1 className="text-4xl font-bold text-[#0F766E]">
-            🛒 CODKampus Market
-          </h1>
-          <p className="text-gray-600">
+        <div className="text-center mb-6">
+          <h1 className="title">🛒 CODKampus Market</h1>
+          <p className="text-gray-600 text-sm sm:text-base mt-2">
             Jual beli antar mahasiswa, #CODAja
           </p>
         </div>
@@ -154,12 +140,11 @@ export default function Market() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cari barang..."
-          className="w-full px-4 py-3 mb-6 rounded-full border focus:ring-2 focus:ring-[#0F766E] outline-none"
+          className="input mb-6"
         />
 
-        {/* FORM JUAL */}
-        <div className="bg-white p-6 rounded-2xl shadow mb-8 border">
-
+        {/* FORM */}
+        <div className="card mb-8">
           <h2 className="font-semibold text-[#0F766E] mb-3">
             💸 Jual Barang
           </h2>
@@ -168,26 +153,23 @@ export default function Market() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Nama barang..."
-            className="w-full mb-3 px-4 py-2 border rounded-xl"
+            className="input mb-3"
           />
 
           <input
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             placeholder="Harga (Rp)"
-            className="w-full mb-3 px-4 py-2 border rounded-xl"
+            className="input mb-3"
           />
 
-          <button
-            onClick={addItem}
-            className="w-full bg-[#F59E0B] text-white py-2 rounded-full font-semibold hover:scale-105 transition"
-          >
+          <button onClick={addItem} className="btn-accent w-full">
             {loading ? "..." : "Jual Sekarang"}
           </button>
         </div>
 
         {/* LIST */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
 
           {filteredItems.length === 0 && (
             <p className="text-gray-500 text-center col-span-2">
@@ -199,30 +181,24 @@ export default function Market() {
             const seller = profiles[item.user_id];
 
             const sellerName =
-              seller?.name ||
-              seller?.email?.split("@")[0] ||
-              "User";
+              seller?.name || seller?.email?.split("@")[0] || "User";
 
             return (
-              <div
-                key={item.id}
-                className="bg-white p-5 rounded-2xl shadow hover:shadow-xl transition border"
-              >
+              <div key={item.id} className="card hover:shadow-xl transition">
 
-                {/* BADGE */}
                 <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
                   COD Ready
                 </span>
 
-                <h2 className="font-bold text-lg text-[#0F766E] mt-2">
+                <h2 className="font-bold text-base sm:text-lg text-[#0F766E] mt-2">
                   {item.name}
                 </h2>
 
-                <p className="text-xl font-bold text-[#F59E0B]">
+                <p className="text-lg sm:text-xl font-bold text-[#F59E0B]">
                   Rp {item.price}
                 </p>
 
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-xs sm:text-sm text-gray-500 mt-1">
                   Dijual oleh:{" "}
                   {seller ? (
                     <Link href={`/user/${seller.id}`}>
@@ -237,7 +213,7 @@ export default function Market() {
 
                 <button
                   onClick={() => chatSeller(item)}
-                  className="mt-4 w-full bg-[#0F766E] text-white py-2 rounded-full hover:scale-105 transition"
+                  className="btn-main w-full mt-4"
                 >
                   💬 Chat Seller
                 </button>
