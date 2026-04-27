@@ -10,26 +10,50 @@ export default function Register() {
   const router = useRouter();
 
   const register = async () => {
+    // 🔥 VALIDASI
     if (!email || !password) {
       alert("Isi semua!");
       return;
     }
 
-    setLoading(true);
-
-    const { error } = await supabase.auth.signUp({
-      email,
-      password
-    });
-
-    if (error) {
-      alert("Register gagal!");
-    } else {
-      alert("Akun berhasil dibuat!");
-      router.push("/login"); // 🔥 langsung ke login
+    if (password.length < 6) {
+      alert("Password minimal 6 karakter");
+      return;
     }
 
-    setLoading(false);
+    try {
+      setLoading(true);
+
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password: password.trim(),
+      });
+
+      // 🔥 DEBUG (WAJIB SEKARANG)
+      console.log("REGISTER RESULT:", data, error);
+
+      // ❌ ERROR
+      if (error) {
+        alert(error.message);
+        return;
+      }
+
+      // ❌ EDGE CASE
+      if (!data || !data.user) {
+        alert("Gagal membuat akun, coba lagi");
+        return;
+      }
+
+      // ✅ SUCCESS
+      alert("Akun berhasil dibuat!");
+      router.push("/login");
+
+    } catch (err) {
+      console.error("REGISTER ERROR:", err);
+      alert("Terjadi kesalahan, coba lagi");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // 🔥 ENTER SUPPORT
@@ -55,6 +79,7 @@ export default function Register() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           onKeyDown={handleKeyDown}
+          autoComplete="email"
           className="w-full mb-4 px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#0F766E] outline-none"
         />
 
@@ -65,11 +90,13 @@ export default function Register() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           onKeyDown={handleKeyDown}
+          autoComplete="new-password"
           className="w-full mb-6 px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#0F766E] outline-none"
         />
 
         {/* BUTTON */}
         <button
+          type="button"
           onClick={register}
           disabled={loading}
           className="w-full bg-[#F59E0B] text-white py-3 rounded-full font-semibold hover:scale-105 transition disabled:opacity-60"
