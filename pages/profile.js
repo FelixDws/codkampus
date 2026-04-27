@@ -11,28 +11,30 @@ export default function Profile() {
   const [loading, setLoading] = useState(false);
 
   // ======================
-  // LOAD PROFILE (FIX 406)
+  // LOAD PROFILE (AUTO FIX USER)
   // ======================
   const loadProfile = async (u) => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("users")
       .select("*")
       .eq("id", u.id)
-      .maybeSingle(); // 🔥 FIX
+      .maybeSingle();
 
-    // 🔥 kalau belum ada → auto insert
+    // 🔥 kalau belum ada → langsung bikin
     if (!data) {
-      await supabase.from("users").insert([
-        {
-          id: u.id,
-          email: u.email,
-          name: u.email.split("@")[0],
-          exp: 0,
-        },
-      ]);
+      const newUser = {
+        id: u.id,
+        email: u.email,
+        name: u.email.split("@")[0],
+        bio: "",
+        exp: 0,
+      };
 
-      setName(u.email.split("@")[0]);
+      await supabase.from("users").insert([newUser]);
+
+      setName(newUser.name);
       setBio("");
+      setAvatarUrl("");
       return;
     }
 
@@ -42,14 +44,17 @@ export default function Profile() {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data }) => {
+    const init = async () => {
+      const { data } = await supabase.auth.getSession();
       const u = data.session?.user;
-      setUser(u);
 
-      if (u) {
-        await loadProfile(u);
-      }
-    });
+      if (!u) return;
+
+      setUser(u);
+      await loadProfile(u);
+    };
+
+    init();
   }, []);
 
   // ======================
@@ -78,7 +83,7 @@ export default function Profile() {
   };
 
   // ======================
-  // SAVE PROFILE (FIX 406)
+  // SAVE PROFILE (PAKAI UPSERT)
   // ======================
   const saveProfile = async () => {
     if (!user) return alert("Belum login");
@@ -93,14 +98,17 @@ export default function Profile() {
 
     const { data, error } = await supabase
       .from("users")
-      .update({
-        name: name.trim(),
-        bio: bio.trim(),
-        avatar_url: finalAvatar,
-      })
-      .eq("id", user.id)
+      .upsert([
+        {
+          id: user.id,
+          email: user.email,
+          name: name.trim(),
+          bio: bio.trim(),
+          avatar_url: finalAvatar,
+        },
+      ])
       .select()
-      .maybeSingle(); // 🔥 FIX
+      .maybeSingle();
 
     if (error) {
       alert(error.message);
@@ -116,6 +124,9 @@ export default function Profile() {
     alert("Profil berhasil disimpan!");
   };
 
+  // ======================
+  // UI (TIDAK DIUBAH)
+  // ======================
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#e6fffa] to-[#fef3c7]">
       <Navbar />
