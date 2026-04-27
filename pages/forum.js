@@ -25,7 +25,7 @@ export default function Forum() {
     });
 
   // =====================
-  // INIT
+  // INIT + REALTIME
   // =====================
   useEffect(() => {
     const init = async () => {
@@ -52,17 +52,31 @@ export default function Forum() {
 
     init();
 
-    // REALTIME
+    // 🔥 REALTIME FIX (ANTI REFRESH)
     const channel = supabase
-      .channel("chat")
+      .channel("realtime-posts")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "posts" },
-        (payload) => {
-          setPosts((prev) => [...prev, payload.new]);
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "posts",
+        },
+        async (payload) => {
+          const newPost = payload.new;
+
+          setPosts((prev) => {
+            const exist = prev.find((p) => p.id === newPost.id);
+            if (exist) return prev;
+            return [...prev, newPost];
+          });
+
+          scrollToBottom();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Realtime:", status);
+      });
 
     return () => supabase.removeChannel(channel);
   }, []);
@@ -103,26 +117,28 @@ export default function Forum() {
 
     setLoading(true);
 
-    const newPost = {
-      content: text,
-      user_email: user.email,
-      user_id: user.id,
-      created_at: new Date().toISOString(),
-      parent_id: replyTo?.id || null,
-    };
+    const { error } = await supabase.from("posts").insert([
+      {
+        content: text,
+        user_email: user.email,
+        user_id: user.id,
+        created_at: new Date().toISOString(),
+        parent_id: replyTo?.id || null,
+      },
+    ]);
 
-    setPosts((prev) => [...prev, newPost]);
-    setText("");
-    setReplyTo(null);
+    if (!error) {
+      setText("");
+      setReplyTo(null);
 
-    await supabase.from("posts").insert([newPost]);
+      // update exp tetap jalan
+      await supabase
+        .from("users")
+        .update({ exp: exp + 10 })
+        .eq("id", user.id);
 
-    await supabase
-      .from("users")
-      .update({ exp: exp + 10 })
-      .eq("id", user.id);
-
-    setExp((prev) => prev + 10);
+      setExp((prev) => prev + 10);
+    }
 
     setLoading(false);
   };
@@ -140,7 +156,7 @@ export default function Forum() {
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-[#e6fffa] to-[#fef3c7]">
 
-      {/* 🔥 STICKY NAVBAR */}
+      {/* NAVBAR STICKY */}
       <div className="sticky top-0 z-50 bg-[#0F766E] text-white px-4 py-3">
 
         <div className="flex items-center justify-between">
@@ -155,7 +171,7 @@ export default function Forum() {
           <div className="text-center">
             <h1 className="font-bold">💬 Forum CODKampus</h1>
 
-            {/* 🔥 EXP BAR */}
+            {/* EXP BAR */}
             <div className="w-32 h-2 bg-white/20 rounded-full mt-1 overflow-hidden">
               <div
                 className="h-full bg-[#F59E0B]"
@@ -176,7 +192,6 @@ export default function Forum() {
         {posts.map((p, i) => {
           const isMe = p.user_id === user?.id;
           const profile = profiles[p.user_id];
-
           const parent = posts.find(x => x.id === p.parent_id);
 
           return (
@@ -197,7 +212,7 @@ export default function Forum() {
                   </p>
                 )}
 
-                {/* 🔥 REPLY PREVIEW */}
+                {/* REPLY PREVIEW */}
                 {parent && (
                   <div className="text-xs bg-black/10 p-2 rounded mb-1">
                     {parent.content}
@@ -210,7 +225,7 @@ export default function Forum() {
                   {formatTime(p.created_at)}
                 </p>
 
-                {/* 🔥 REPLY BUTTON */}
+                {/* REPLY BUTTON */}
                 <button
                   onClick={() => setReplyTo(p)}
                   className="text-xs text-blue-400 mt-1"
@@ -226,7 +241,7 @@ export default function Forum() {
         <div ref={bottomRef}></div>
       </div>
 
-      {/* 🔥 REPLY BAR */}
+      {/* REPLY BAR */}
       {replyTo && (
         <div className="px-3 py-2 bg-yellow-100 text-sm flex justify-between">
           <span>Reply: {replyTo.content.slice(0, 30)}...</span>
