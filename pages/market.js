@@ -18,8 +18,6 @@ export default function Market() {
 
   const router = useRouter();
 
-  // ❌ HAPUS TOTAL createUserIfNotExist (biang masalah)
-
   const getItems = async () => {
     const { data } = await supabase
       .from("market")
@@ -38,6 +36,11 @@ export default function Market() {
       .select("*")
       .in("id", userIds);
 
+    // ✅ FIX: bikin map dulu
+    const map = {};
+    users?.forEach((u) => (map[u.id] = u));
+
+    // ✅ FIX: merge, bukan overwrite
     setProfiles((prev) => ({ ...prev, ...map }));
   };
 
