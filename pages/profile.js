@@ -108,7 +108,7 @@ export default function Profile() {
 
     const { data } = await supabase
       .from("users")
-      .upsert([
+      .update([
         {
           id: user.id,
           email: user.email,
