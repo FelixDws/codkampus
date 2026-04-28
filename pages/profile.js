@@ -7,13 +7,13 @@ export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
-  const [phone, setPhone] = useState(""); // ✅ TAMBAHAN
+  const [phone, setPhone] = useState("");
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState("");
   const [loading, setLoading] = useState(false);
 
   // ======================
-  // LOAD PROFILE (CLEAN)
+  // LOAD PROFILE
   // ======================
   const loadProfile = async (u) => {
     const { data } = await supabase
@@ -23,53 +23,45 @@ export default function Profile() {
       .maybeSingle();
 
     if (!data) {
-  const newUser = {
-    id: u.id,
-    email: u.email,
-    name: u.email.split("@")[0],
-    bio: "",
-    avatar_url: "",
-    phone: "",
-    exp: 0,
-  };
+      const newUser = {
+        id: u.id,
+        email: u.email,
+        name: u.email.split("@")[0],
+        bio: "",
+        avatar_url: "",
+        phone: "",
+        exp: 0,
+      };
 
-  // ❌ GAK ADA INSERT / UPSERT DI SINI
+      setProfile(newUser);
+      setName(newUser.name);
+      setBio(newUser.bio);
+      setAvatarUrl(newUser.avatar_url);
+      setPhone(newUser.phone);
+      return;
+    }
 
-  setProfile(newUser);
-  setName(newUser.name);
-  setBio(newUser.bio);
-  setAvatarUrl(newUser.avatar_url);
-  setPhone(newUser.phone);
-  return;
-}
     setProfile(data);
     setName(data.name || "");
     setBio(data.bio || "");
     setAvatarUrl(data.avatar_url || "");
-    setPhone(data.phone || ""); // ✅ TAMBAHAN
+    setPhone(data.phone || "");
   };
 
   useEffect(() => {
-  const init = async () => {
-    const { data } = await supabase.auth.getSession();
+    const init = async () => {
+      const { data } = await supabase.auth.getSession();
 
-    console.log("SESSION:", data); // 🔥 TAMBAHAN DEBUG
+      const u = data.session?.user;
 
-    const u = data.session?.user;
+      if (!u) return;
 
-    if (!u) {
-      console.log("USER NULL (BELUM LOGIN)");
-      return;
-    }
+      setUser(u);
+      await loadProfile(u);
+    };
 
-    console.log("USER ADA:", u); // 🔥 TAMBAHAN DEBUG
-
-    setUser(u);
-    await loadProfile(u);
-  };
-
-  init();
-}, []);
+    init();
+  }, []);
 
   // ======================
   // UPLOAD AVATAR
@@ -93,7 +85,7 @@ export default function Profile() {
   };
 
   // ======================
-  // SAVE PROFILE (UPSERT)
+  // SAVE PROFILE (FIXED)
   // ======================
   const saveProfile = async () => {
     if (!user) return;
@@ -106,30 +98,39 @@ export default function Profile() {
       finalAvatar = await uploadAvatar();
     }
 
-const { data } = await supabase
-  .from("users")
-  .update({
-    name,
-    bio,
-    avatar_url: finalAvatar,
-    phone,
-  })
-  .eq("id", user.id)
-  .select()
-  .maybeSingle();
+    // 🔥 FIX UTAMA: pakai UPSERT
+    const { data, error } = await supabase
+      .from("users")
+      .upsert({
+        id: user.id,
+        email: user.email,
+        name,
+        bio,
+        avatar_url: finalAvatar,
+        phone,
+      })
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      console.log("SAVE ERROR:", error);
+      alert("Gagal simpan");
+      setLoading(false);
+      return;
+    }
 
     setProfile(data);
     setName(data?.name || "");
     setBio(data?.bio || "");
     setAvatarUrl(data?.avatar_url || "");
-    setPhone(data?.phone || ""); // ✅ TAMBAHAN
+    setPhone(data?.phone || "");
 
     setLoading(false);
     alert("Profil berhasil disimpan!");
   };
 
   // ======================
-  // FORMAT WA LINK
+  // FORMAT WA
   // ======================
   const formatPhone = (num) => {
     if (!num) return "";
@@ -171,7 +172,6 @@ const { data } = await supabase
             className="w-full mb-4 p-3 border rounded-xl"
           />
 
-          {/* ✅ INPUT NOMOR */}
           <input
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
@@ -185,8 +185,6 @@ const { data } = await supabase
             placeholder="Bio"
             className="w-full mb-4 p-3 border rounded-xl"
           />
-
-
 
           <button
             onClick={saveProfile}
