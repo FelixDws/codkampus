@@ -50,18 +50,26 @@ export default function Profile() {
   };
 
   useEffect(() => {
-    const init = async () => {
-      const { data } = await supabase.auth.getSession();
-      const u = data.session?.user;
+  const init = async () => {
+    const { data } = await supabase.auth.getSession();
 
-      if (!u) return;
+    console.log("SESSION:", data); // 🔥 TAMBAHAN DEBUG
 
-      setUser(u);
-      await loadProfile(u);
-    };
+    const u = data.session?.user;
 
-    init();
-  }, []);
+    if (!u) {
+      console.log("USER NULL (BELUM LOGIN)");
+      return;
+    }
+
+    console.log("USER ADA:", u); // 🔥 TAMBAHAN DEBUG
+
+    setUser(u);
+    await loadProfile(u);
+  };
+
+  init();
+}, []);
 
   // ======================
   // UPLOAD AVATAR
