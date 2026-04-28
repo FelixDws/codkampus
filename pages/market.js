@@ -13,27 +13,12 @@ export default function Market() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // 🔥 TAMBAHAN
   const [showPopup, setShowPopup] = useState(false);
   const [showMine, setShowMine] = useState(false);
 
   const router = useRouter();
 
-  const createUserIfNotExist = async (u) => {
-  if (!u) return; // ⛔ stop kalau belum login
-
-const { data: sessionData } = await supabase.auth.getSession();
-const session = sessionData.session;
-
-// ⛔ kalau belum login, stop
-if (!session) return;
-
-// ✅ cukup ambil user, JANGAN insert / upsert
-const u = session.user;
-
-// lanjut pakai u untuk logic lain kalau perlu
-console.log("USER:", u);
-};
+  // ❌ HAPUS TOTAL createUserIfNotExist (biang masalah)
 
   const getItems = async () => {
     const { data } = await supabase
@@ -59,15 +44,13 @@ console.log("USER:", u);
   };
 
   useEffect(() => {
-  getItems();
+    getItems();
 
-  supabase.auth.getSession().then(async ({ data }) => {
-    const u = data.session?.user;
-    setUser(u);
-
-    // ❌ HAPUS createUserIfNotExist
-  });
-}, []);
+    supabase.auth.getSession().then(({ data }) => {
+      const u = data.session?.user;
+      setUser(u);
+    });
+  }, []);
 
   const addItem = async () => {
     if (!name.trim() || !price.trim()) {
@@ -84,7 +67,7 @@ console.log("USER:", u);
         name: name.trim(),
         price: Number(price),
         user_id: user.id,
-        created_at: new Date().toISOString(), // 🔥 tanggal
+        created_at: new Date().toISOString(),
       },
     ]);
 
@@ -162,7 +145,6 @@ console.log("USER:", u);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#e6fffa] to-[#fef3c7]">
-
       <Navbar />
 
       <div className="container-main">
@@ -171,7 +153,6 @@ console.log("USER:", u);
           <h1 className="title">🛒 CODKampus Market</h1>
         </div>
 
-        {/* 🔥 BUTTON */}
         <div className="flex gap-2 mb-4">
           <button onClick={() => setShowPopup(true)} className="btn-accent">
             + Jual Barang
@@ -189,7 +170,6 @@ console.log("USER:", u);
           className="input mb-6"
         />
 
-        {/* LIST */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
 
           {displayItems.length === 0 && (
@@ -218,7 +198,6 @@ console.log("USER:", u);
                   Rp {item.price}
                 </p>
 
-                {/* 🔥 TANGGAL */}
                 <p className="text-xs text-gray-400">
                   Upload: {item.created_at
                     ? new Date(item.created_at).toLocaleString()
@@ -226,32 +205,31 @@ console.log("USER:", u);
                 </p>
 
                 <p className="text-xs text-gray-500 mt-1">
-  Dijual oleh:{" "}
-  {seller ? (
-    <Link href={`/user/${seller.id}`}>
-      <span className="hover:underline cursor-pointer">
-        {sellerName}
-      </span>
-    </Link>
-  ) : (
-    sellerName
-  )}
-</p>
+                  Dijual oleh:{" "}
+                  {seller ? (
+                    <Link href={`/user/${seller.id}`}>
+                      <span className="hover:underline cursor-pointer">
+                        {sellerName}
+                      </span>
+                    </Link>
+                  ) : (
+                    sellerName
+                  )}
+                </p>
 
-{/* 🔥 BADGE DI BAWAHNYA */}
-{seller?.badge && (
-  <div className="mt-1">
-    <span
-      className={`text-[10px] px-2 py-0.5 rounded-full font-semibold
-      ${seller.badge === "pro"
-        ? "bg-blue-100 text-blue-600"
-        : "bg-yellow-100 text-yellow-600"}`}
-    >
-      {seller.badge === "pro" && "🧠 Pro"}
-      {seller.badge === "king" && "👑 King"}
-    </span>
-  </div>
-)}
+                {seller?.badge && (
+                  <div className="mt-1">
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-semibold
+                      ${seller.badge === "pro"
+                        ? "bg-blue-100 text-blue-600"
+                        : "bg-yellow-100 text-yellow-600"}`}
+                    >
+                      {seller.badge === "pro" && "🧠 Pro"}
+                      {seller.badge === "king" && "👑 King"}
+                    </span>
+                  </div>
+                )}
 
                 <button
                   onClick={() => chatSeller(item)}
@@ -282,7 +260,6 @@ console.log("USER:", u);
           })}
         </div>
 
-        {/* 🔥 POPUP */}
         {showPopup && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
             <div className="bg-white p-6 rounded-xl w-[300px]">
