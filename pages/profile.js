@@ -23,26 +23,25 @@ export default function Profile() {
       .maybeSingle();
 
     if (!data) {
-      const newUser = {
-        id: u.id,
-        email: u.email,
-        name: u.email.split("@")[0],
-        bio: "",
-        avatar_url: "",
-        phone: "", // ✅ TAMBAHAN
-        exp: 0,
-      };
+  const newUser = {
+    id: u.id,
+    email: u.email,
+    name: u.email.split("@")[0],
+    bio: "",
+    avatar_url: "",
+    phone: "",
+    exp: 0,
+  };
 
-      await supabase.from("users").insert([newUser]);
+  await supabase.from("users").upsert([newUser]); // ✅ FIX
 
-      setProfile(newUser);
-      setName(newUser.name);
-      setBio(newUser.bio);
-      setAvatarUrl(newUser.avatar_url);
-      setPhone(newUser.phone); // ✅ TAMBAHAN
-      return;
-    }
-
+  setProfile(newUser);
+  setName(newUser.name);
+  setBio(newUser.bio);
+  setAvatarUrl(newUser.avatar_url);
+  setPhone(newUser.phone);
+  return;
+}
     setProfile(data);
     setName(data.name || "");
     setBio(data.bio || "");
@@ -181,6 +180,7 @@ export default function Profile() {
             placeholder="Bio"
             className="w-full mb-4 p-3 border rounded-xl"
           />
+
 
 
           <button
