@@ -22,14 +22,17 @@ export default function Market() {
   const createUserIfNotExist = async (u) => {
   if (!u) return; // ⛔ stop kalau belum login
 
-  const { data: sessionData } = await supabase.auth.getSession();
-  if (!sessionData.session) return; // ⛔ belum login
+const { data: sessionData } = await supabase.auth.getSession();
+const session = sessionData.session;
 
-  await supabase.from("users").upsert({
-    id: u.id,
-    email: u.email,
-    name: u.email.split("@")[0],
-  });
+// ⛔ kalau belum login, stop
+if (!session) return;
+
+// ✅ cukup ambil user, JANGAN insert / upsert
+const u = session.user;
+
+// lanjut pakai u untuk logic lain kalau perlu
+console.log("USER:", u);
 };
 
   const getItems = async () => {
