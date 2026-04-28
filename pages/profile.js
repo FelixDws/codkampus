@@ -106,20 +106,17 @@ export default function Profile() {
       finalAvatar = await uploadAvatar();
     }
 
-    const { data } = await supabase
-      .from("users")
-      .update([
-        {
-          id: user.id,
-          email: user.email,
-          name,
-          bio,
-          avatar_url: finalAvatar,
-          phone, // ✅ TAMBAHAN
-        },
-      ])
-      .select()
-      .maybeSingle();
+const { data } = await supabase
+  .from("users")
+  .update({
+    name,
+    bio,
+    avatar_url: finalAvatar,
+    phone,
+  })
+  .eq("id", user.id)
+  .select()
+  .maybeSingle();
 
     setProfile(data);
     setName(data?.name || "");
