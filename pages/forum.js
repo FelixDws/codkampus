@@ -239,7 +239,7 @@ export default function Forum() {
 
           return posts.map((p, i) => {
             const isMe = p.user_id === user?.id;
-            const profile = profiles[p.user_id];
+            const profile = profiles[p.user_id?.trim?.()];
             const parent = posts.find(x => x.id === p.parent_id);
 
             const isOnline = onlineUsers.includes(p.user_id); // ✅ TAMBAHAN
