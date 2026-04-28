@@ -33,7 +33,7 @@ export default function Profile() {
     exp: 0,
   };
 
-  await supabase.from("users").upsert([newUser]); // ✅ FIX
+  // ❌ GAK ADA INSERT / UPSERT DI SINI
 
   setProfile(newUser);
   setName(newUser.name);
