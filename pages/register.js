@@ -6,7 +6,7 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showInfo, setShowInfo] = useState(false); // ✅ TAMBAHAN
+  const [showInfo, setShowInfo] = useState(false);
 
   const router = useRouter();
 
@@ -39,25 +39,6 @@ export default function Register() {
         return;
       }
 
-      const { data, error } = await supabase.auth.signUp({
-  email: email.trim(),
-  password: password.trim(),
-});
-
-if (error) {
-  alert(error.message);
-  return;
-}
-
-if (!data?.user) {
-  alert("Gagal membuat akun");
-  return;
-}
-
-alert("Akun berhasil dibuat! Cek email kamu untuk verifikasi sebelum login.");
-
-router.push("/login");
-
       alert("Akun berhasil dibuat! Cek email kamu untuk verifikasi sebelum login.");
 
       router.push("/login");
@@ -86,6 +67,9 @@ router.push("/login");
         </h1>
 
         <input
+          id="email"
+          name="email"
+          type="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -95,6 +79,8 @@ router.push("/login");
         />
 
         <input
+          id="password"
+          name="password"
           type="password"
           placeholder="Password"
           value={password}
@@ -104,15 +90,15 @@ router.push("/login");
           className="w-full mb-2 px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#0F766E] outline-none"
         />
 
-        {/* 🔐 INFO PASSWORD */}
+        {/* INFO PASSWORD */}
         <div className="flex items-center justify-between mb-6 text-xs text-gray-500">
           <span>🔒 Password kamu dienkripsi dan aman</span>
           <button
-  onClick={() => setShowInfo(true)}
-  className="w-6 h-6 flex items-center justify-center rounded-full bg-[#0F766E] text-white text-xs font-bold"
->
-  ?
-</button>
+            onClick={() => setShowInfo(true)}
+            className="w-6 h-6 flex items-center justify-center rounded-full bg-[#0F766E] text-white text-xs font-bold"
+          >
+            ?
+          </button>
         </div>
 
         <button
@@ -136,7 +122,7 @@ router.push("/login");
 
       </div>
 
-      {/* 🔥 POPUP KEAMANAN */}
+      {/* POPUP KEAMANAN */}
       {showInfo && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center px-4">
           <div className="bg-white max-w-sm w-full p-6 rounded-2xl shadow-lg text-sm">
@@ -146,7 +132,7 @@ router.push("/login");
             </h2>
 
             <ul className="space-y-2 text-gray-600">
-              <li>• Password disimpan dalam bentuk enkripsi (tidak bisa dibaca)</li>
+              <li>• Password disimpan dalam bentuk enkripsi</li>
               <li>• Jangan bagikan password ke siapapun</li>
               <li>• Gunakan kombinasi huruf & angka</li>
               <li>• Minimal 6 karakter</li>
