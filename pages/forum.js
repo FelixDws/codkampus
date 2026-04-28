@@ -142,7 +142,7 @@ export default function Forum() {
     const clean = data || [];
     setPosts(clean);
 
-    const ids = [...new Set(clean.map((p) => p.user_id))];
+    const ids = [...new Set(clean.map((p) => p.user_id).filter(Boolean))];
 
     const { data: users } = await supabase
       .from("users")
