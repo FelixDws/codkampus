@@ -24,22 +24,19 @@ export default function Register() {
     try {
       setLoading(true);
 
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email: email.trim(),
         password: password.trim(),
       });
 
+      // ❌ kalau error baru gagal
       if (error) {
         alert(error.message);
         return;
       }
 
-      if (!data?.user) {
-        alert("Gagal membuat akun");
-        return;
-      }
-
-      alert("Akun berhasil dibuat! Cek email kamu untuk verifikasi sebelum login.");
+      // ✅ SUCCESS (meskipun belum login karena email confirm ON)
+      alert("📩 Email verifikasi sudah dikirim! Cek inbox kamu ya.");
 
       router.push("/login");
 
