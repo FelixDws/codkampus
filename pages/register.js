@@ -39,19 +39,24 @@ export default function Register() {
         return;
       }
 
-      const { error: insertError } = await supabase.from("users").insert([
-        {
-          id: data.user.id,
-          email: data.user.email,
-          name: data.user.email.split("@")[0],
-          exp: 0,
-        },
-      ]);
+      const { data, error } = await supabase.auth.signUp({
+  email: email.trim(),
+  password: password.trim(),
+});
 
-      if (insertError) {
-        alert("Akun dibuat tapi gagal simpan profil");
-        return;
-      }
+if (error) {
+  alert(error.message);
+  return;
+}
+
+if (!data?.user) {
+  alert("Gagal membuat akun");
+  return;
+}
+
+alert("Akun berhasil dibuat! Cek email kamu untuk verifikasi sebelum login.");
+
+router.push("/login");
 
       alert("Akun berhasil dibuat! Cek email kamu untuk verifikasi sebelum login.");
 
