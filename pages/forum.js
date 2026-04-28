@@ -151,7 +151,7 @@ export default function Forum() {
 
     const map = {};
     users?.forEach((u) => (map[u.id] = u));
-    setProfiles(map);
+    setProfiles((prev) => ({ ...prev, ...map }));
   };
 
   const deleteMessage = async (id) => {

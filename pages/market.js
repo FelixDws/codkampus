@@ -38,9 +38,7 @@ export default function Market() {
       .select("*")
       .in("id", userIds);
 
-    const map = {};
-    users?.forEach((u) => (map[u.id] = u));
-    setProfiles(map);
+    setProfiles((prev) => ({ ...prev, ...map }));
   };
 
   useEffect(() => {
