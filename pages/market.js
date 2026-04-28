@@ -20,12 +20,17 @@ export default function Market() {
   const router = useRouter();
 
   const createUserIfNotExist = async (u) => {
-    await supabase.from("users").upsert({
-      id: u.id,
-      email: u.email,
-      name: u.email.split("@")[0],
-    });
-  };
+  if (!u) return; // ⛔ stop kalau belum login
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) return; // ⛔ belum login
+
+  await supabase.from("users").upsert({
+    id: u.id,
+    email: u.email,
+    name: u.email.split("@")[0],
+  });
+};
 
   const getItems = async () => {
     const { data } = await supabase
@@ -51,15 +56,15 @@ export default function Market() {
   };
 
   useEffect(() => {
-    getItems();
+  getItems();
 
-    supabase.auth.getSession().then(async ({ data }) => {
-      const u = data.session?.user;
-      setUser(u);
+  supabase.auth.getSession().then(async ({ data }) => {
+    const u = data.session?.user;
+    setUser(u);
 
-      if (u) await createUserIfNotExist(u);
-    });
-  }, []);
+    // ❌ HAPUS createUserIfNotExist
+  });
+}, []);
 
   const addItem = async () => {
     if (!name.trim() || !price.trim()) {
