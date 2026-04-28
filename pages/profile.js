@@ -7,6 +7,7 @@ export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
+  const [phone, setPhone] = useState(""); // ✅ TAMBAHAN
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,7 +22,6 @@ export default function Profile() {
       .eq("id", u.id)
       .maybeSingle();
 
-    // kalau belum ada → bikin
     if (!data) {
       const newUser = {
         id: u.id,
@@ -29,6 +29,7 @@ export default function Profile() {
         name: u.email.split("@")[0],
         bio: "",
         avatar_url: "",
+        phone: "", // ✅ TAMBAHAN
         exp: 0,
       };
 
@@ -38,6 +39,7 @@ export default function Profile() {
       setName(newUser.name);
       setBio(newUser.bio);
       setAvatarUrl(newUser.avatar_url);
+      setPhone(newUser.phone); // ✅ TAMBAHAN
       return;
     }
 
@@ -45,6 +47,7 @@ export default function Profile() {
     setName(data.name || "");
     setBio(data.bio || "");
     setAvatarUrl(data.avatar_url || "");
+    setPhone(data.phone || ""); // ✅ TAMBAHAN
   };
 
   useEffect(() => {
@@ -105,6 +108,7 @@ export default function Profile() {
           name,
           bio,
           avatar_url: finalAvatar,
+          phone, // ✅ TAMBAHAN
         },
       ])
       .select()
@@ -114,10 +118,23 @@ export default function Profile() {
     setName(data?.name || "");
     setBio(data?.bio || "");
     setAvatarUrl(data?.avatar_url || "");
+    setPhone(data?.phone || ""); // ✅ TAMBAHAN
 
     setLoading(false);
     alert("Profil berhasil disimpan!");
   };
+
+  // ======================
+  // FORMAT WA LINK
+  // ======================
+  const formatPhone = (num) => {
+    if (!num) return "";
+    return num.replace(/^0/, "62").replace(/\D/g, "");
+  };
+
+  const waLink = phone
+    ? `https://wa.me/${formatPhone(phone)}?text=Halo%20saya%20tertarik`
+    : "";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#e6fffa] to-[#fef3c7]">
@@ -150,12 +167,21 @@ export default function Profile() {
             className="w-full mb-4 p-3 border rounded-xl"
           />
 
+          {/* ✅ INPUT NOMOR */}
+          <input
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="Nomor WhatsApp (contoh: 08123...)"
+            className="w-full mb-4 p-3 border rounded-xl"
+          />
+
           <textarea
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             placeholder="Bio"
             className="w-full mb-4 p-3 border rounded-xl"
           />
+
 
           <button
             onClick={saveProfile}

@@ -2,6 +2,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import supabase from "../../lib/supabase";
 import Link from "next/link";
+import Navbar from "../../components/Navbar";
 
 export default function UserProfile() {
   const router = useRouter();
@@ -9,6 +10,15 @@ export default function UserProfile() {
 
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const formatPhone = (num) => {
+    if (!num) return "";
+    return num.replace(/^0/, "62").replace(/\D/g, "");
+  };
+
+  const waLink = profile?.phone
+    ? `https://wa.me/${formatPhone(profile.phone)}?text=Halo%20saya%20tertarik%20dengan%20produkmu`
+    : "";
 
   useEffect(() => {
     if (!id) return;
@@ -43,33 +53,72 @@ export default function UserProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-[#e5ddd5] flex items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-[#e6fffa] to-[#fef3c7]">
+      
+      <Navbar />
 
-      <div className="bg-white w-full max-w-md p-6 rounded-2xl shadow text-center">
+      <div className="flex justify-center items-center px-6 py-10">
 
-        {/* AVATAR */}
-        <img
-          src={profile.avatar_url || "https://via.placeholder.com/100"}
-          className="w-24 h-24 rounded-full object-cover mx-auto border-4 border-[#075E54]"
-        />
+        <div className="bg-white w-full max-w-md p-6 rounded-3xl shadow-lg text-center">
 
-        {/* NAME */}
-        <h1 className="text-xl font-bold mt-3 text-[#075E54]">
-          {profile.name || "User"}
-        </h1>
+          {/* AVATAR */}
+          <img
+            src={profile.avatar_url || "https://via.placeholder.com/100"}
+            className="w-24 h-24 rounded-full object-cover mx-auto border-4 border-[#0F766E]"
+          />
 
-        {/* BIO */}
-        <p className="text-gray-500 text-sm mt-1">
-          {profile.bio || "Belum ada bio"}
-        </p>
+          {/* NAME */}
+          <h1 className="text-2xl font-bold mt-3 text-[#0F766E]">
+            {profile.name || "User"}
+          </h1>
 
-        {/* EXP */}
-        <div className="mt-4 bg-[#075E54] text-white px-4 py-2 rounded-full inline-block">
-          EXP: {profile.exp || 0}
+          {/* 🔥 BADGE */}
+          {profile.badge && (
+            <div className="mt-2 flex justify-center">
+              <span
+                className={`px-3 py-1 text-xs rounded-full font-semibold
+                ${profile.badge === "pro"
+                  ? "bg-blue-100 text-blue-600"
+                  : "bg-yellow-100 text-yellow-600"}`}
+              >
+                {profile.badge === "pro" && "🧠 Quiz Pro"}
+                {profile.badge === "king" && "👑 Quiz King"}
+              </span>
+            </div>
+          )}
+
+          {/* BIO */}
+          <p className="text-gray-500 text-sm mt-1">
+            {profile.bio || "Belum ada bio"}
+          </p>
+
+          {/* EXP */}
+          <div className="mt-4">
+            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[#F59E0B]"
+                style={{ width: `${(profile.exp % 50) * 2}%` }}
+              />
+            </div>
+            <p className="text-xs mt-1 text-gray-500">
+              EXP: {profile.exp || 0}
+            </p>
+          </div>
+
+          {/* WHATSAPP */}
+          {profile.phone && (
+            <a
+              href={waLink}
+              target="_blank"
+              className="block mt-5 bg-green-500 hover:bg-green-600 transition text-white px-4 py-3 rounded-full"
+            >
+              Chat WhatsApp
+            </a>
+          )}
+
         </div>
 
       </div>
-
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import supabase from "../lib/supabase";
 import Navbar from "../components/Navbar";
 import Link from "next/link";
+import { useRouter } from "next/router";
 
 export default function Market() {
   const [items, setItems] = useState([]);
@@ -12,12 +13,17 @@ export default function Market() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // 🔥 TAMBAHAN
+  const [showPopup, setShowPopup] = useState(false);
+  const [showMine, setShowMine] = useState(false);
+
+  const router = useRouter();
+
   const createUserIfNotExist = async (u) => {
     await supabase.from("users").upsert({
       id: u.id,
       email: u.email,
       name: u.email.split("@")[0],
-      exp: 0,
     });
   };
 
@@ -51,9 +57,7 @@ export default function Market() {
       const u = data.session?.user;
       setUser(u);
 
-      if (u) {
-        await createUserIfNotExist(u);
-      }
+      if (u) await createUserIfNotExist(u);
     });
   }, []);
 
@@ -72,19 +76,43 @@ export default function Market() {
         name: name.trim(),
         price: Number(price),
         user_id: user.id,
+        created_at: new Date().toISOString(), // 🔥 tanggal
       },
     ]);
 
     if (!error) {
       setName("");
       setPrice("");
+      setShowPopup(false);
       getItems();
-      alert("Barang berhasil dijual!");
     } else {
       alert("Gagal jual");
     }
 
     setLoading(false);
+  };
+
+  const deleteItem = async (id) => {
+    if (!confirm("Yakin mau hapus barang ini?")) return;
+    await supabase.from("market").delete().eq("id", id);
+    getItems();
+  };
+
+  const editItem = async (item) => {
+    const newName = prompt("Edit nama barang:", item.name);
+    const newPrice = prompt("Edit harga:", item.price);
+
+    if (!newName || !newPrice) return;
+
+    await supabase
+      .from("market")
+      .update({
+        name: newName,
+        price: Number(newPrice),
+      })
+      .eq("id", item.id);
+
+    getItems();
   };
 
   const chatSeller = async (item) => {
@@ -97,7 +125,7 @@ export default function Market() {
         .from("users")
         .select("*")
         .eq("id", item.user_id)
-        .maybeSingle(); // 🔥 FIX
+        .maybeSingle();
 
       seller = data;
     }
@@ -113,12 +141,16 @@ export default function Market() {
       },
     ]);
 
-    alert(`Pesan dikirim ke ${sellerName}`);
+    setTimeout(() => router.push("/forum"), 200);
   };
+
+  const myItems = items.filter((i) => i.user_id === user?.id);
 
   const filteredItems = items.filter((item) =>
     item.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  const displayItems = showMine ? myItems : filteredItems;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#e6fffa] to-[#fef3c7]">
@@ -127,15 +159,21 @@ export default function Market() {
 
       <div className="container-main">
 
-        {/* HEADER */}
         <div className="text-center mb-6">
           <h1 className="title">🛒 CODKampus Market</h1>
-          <p className="text-gray-600 text-sm sm:text-base mt-2">
-            Jual beli antar mahasiswa, #CODAja
-          </p>
         </div>
 
-        {/* SEARCH */}
+        {/* 🔥 BUTTON */}
+        <div className="flex gap-2 mb-4">
+          <button onClick={() => setShowPopup(true)} className="btn-accent">
+            + Jual Barang
+          </button>
+
+          <button onClick={() => setShowMine(!showMine)} className="btn-main">
+            {showMine ? "Semua Barang" : "Penjualan Saya"}
+          </button>
+        </div>
+
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -143,43 +181,17 @@ export default function Market() {
           className="input mb-6"
         />
 
-        {/* FORM */}
-        <div className="card mb-8">
-          <h2 className="font-semibold text-[#0F766E] mb-3">
-            💸 Jual Barang
-          </h2>
-
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Nama barang..."
-            className="input mb-3"
-          />
-
-          <input
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            placeholder="Harga (Rp)"
-            className="input mb-3"
-          />
-
-          <button onClick={addItem} className="btn-accent w-full">
-            {loading ? "..." : "Jual Sekarang"}
-          </button>
-        </div>
-
         {/* LIST */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
 
-          {filteredItems.length === 0 && (
+          {displayItems.length === 0 && (
             <p className="text-gray-500 text-center col-span-2">
-              Barang tidak ditemukan 😢
+              Kosong 😢
             </p>
           )}
 
-          {filteredItems.map((item) => {
+          {displayItems.map((item) => {
             const seller = profiles[item.user_id];
-
             const sellerName =
               seller?.name || seller?.email?.split("@")[0] || "User";
 
@@ -190,26 +202,48 @@ export default function Market() {
                   COD Ready
                 </span>
 
-                <h2 className="font-bold text-base sm:text-lg text-[#0F766E] mt-2">
+                <h2 className="font-bold text-[#0F766E] mt-2">
                   {item.name}
                 </h2>
 
-                <p className="text-lg sm:text-xl font-bold text-[#F59E0B]">
+                <p className="text-[#F59E0B] font-bold">
                   Rp {item.price}
                 </p>
 
-                <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                  Dijual oleh:{" "}
-                  {seller ? (
-                    <Link href={`/user/${seller.id}`}>
-                      <span className="hover:underline cursor-pointer">
-                        {sellerName}
-                      </span>
-                    </Link>
-                  ) : (
-                    sellerName
-                  )}
+                {/* 🔥 TANGGAL */}
+                <p className="text-xs text-gray-400">
+                  Upload: {item.created_at
+                    ? new Date(item.created_at).toLocaleString()
+                    : "-"}
                 </p>
+
+                <p className="text-xs text-gray-500 mt-1">
+  Dijual oleh:{" "}
+  {seller ? (
+    <Link href={`/user/${seller.id}`}>
+      <span className="hover:underline cursor-pointer">
+        {sellerName}
+      </span>
+    </Link>
+  ) : (
+    sellerName
+  )}
+</p>
+
+{/* 🔥 BADGE DI BAWAHNYA */}
+{seller?.badge && (
+  <div className="mt-1">
+    <span
+      className={`text-[10px] px-2 py-0.5 rounded-full font-semibold
+      ${seller.badge === "pro"
+        ? "bg-blue-100 text-blue-600"
+        : "bg-yellow-100 text-yellow-600"}`}
+    >
+      {seller.badge === "pro" && "🧠 Pro"}
+      {seller.badge === "king" && "👑 King"}
+    </span>
+  </div>
+)}
 
                 <button
                   onClick={() => chatSeller(item)}
@@ -218,10 +252,60 @@ export default function Market() {
                   💬 Chat Seller
                 </button>
 
+                {user?.id === item.user_id && (
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={() => editItem(item)}
+                      className="flex-1 bg-blue-500 text-white py-2 rounded-full text-sm"
+                    >
+                      ✏️ Edit
+                    </button>
+
+                    <button
+                      onClick={() => deleteItem(item.id)}
+                      className="flex-1 bg-red-500 text-white py-2 rounded-full text-sm"
+                    >
+                      🗑 Hapus
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
+
+        {/* 🔥 POPUP */}
+        {showPopup && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+            <div className="bg-white p-6 rounded-xl w-[300px]">
+
+              <h2 className="mb-3 font-bold">Jual Barang</h2>
+
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Nama"
+                className="input mb-2"
+              />
+
+              <input
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="Harga"
+                className="input mb-3"
+              />
+
+              <button onClick={addItem} className="btn-accent w-full mb-2">
+                {loading ? "..." : "Jual"}
+              </button>
+
+              <button onClick={() => setShowPopup(false)} className="w-full text-sm">
+                Batal
+              </button>
+
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

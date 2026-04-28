@@ -38,4 +38,37 @@
     @apply w-20 h-20 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-[#0F766E];
   }
 
+  /* =========================
+     ANIMASI WHATSAPP STYLE
+     ========================= */
+
+  @keyframes slideRight {
+    from {
+      transform: translateX(40px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideLeft {
+    from {
+      transform: translateX(-40px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .slide-right {
+    animation: slideRight 0.3s ease-out;
+  }
+
+  .slide-left {
+    animation: slideLeft 0.3s ease-out;
+  }
 }

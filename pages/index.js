@@ -27,7 +27,7 @@ export default function Home() {
   const features = [
     { title: "Forum Diskusi", link: "/forum", icon: "💬" },
     { title: "Marketplace", link: "/market", icon: "🛒" },
-    { title: "Event & Turnamen", link: "/event", icon: "🎮" },
+    { title: "QuisYuk", link: "/event", icon: "🎮" },
     { title: "Leaderboard", link: "/leaderboard", icon: "🏆" }
   ];
 
