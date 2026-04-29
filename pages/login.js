@@ -25,7 +25,7 @@ export default function Login() {
     if (error) {
       alert("Login gagal!");
     } else {
-      router.push("/forum");
+      router.push("/");
     }
 
     setLoading(false);

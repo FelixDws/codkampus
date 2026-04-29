@@ -32,11 +32,15 @@ export default function Navbar() {
               </button>
             )}
 
-            <Link href="/">
-              <h1 className="text-sm sm:text-xl font-bold cursor-pointer truncate">
-                💸 CODKampus
-              </h1>
-            </Link>
+            <nav className="h-16 flex items-center px-4">
+  <Link href="/">
+    <img
+      src="/logo/logo2.png"
+      alt="Logo"
+      className="h-20 w-auto object-contain"
+    />
+  </Link>
+</nav>
           </div>
 
           {/* RIGHT (WRAP DI HP) */}
@@ -56,7 +60,7 @@ export default function Navbar() {
 
             <Link href="/event">
               <span className="hover:text-[#F59E0B] cursor-pointer whitespace-nowrap">
-                Event
+                Quiz
               </span>
             </Link>
 
