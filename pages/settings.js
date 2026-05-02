@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import supabase from "../lib/supabase";
 import Navbar from "../components/Navbar";
+import { Chrome } from "lucide-react";
 
 export default function Settings() {
   const [tab, setTab] = useState("Profile");
@@ -87,21 +88,22 @@ const isGoogle = user?.app_metadata?.provider === "google";
     <>
       <Navbar />
 
-      <div className="container-main">
+      <div className="container-main space-y-8">
         <h1 className="title mb-6">Pengaturan</h1>
 
-        <div className="flex flex-col sm:flex-row gap-6">
+        <div className="flex flex-col sm:flex-row gap-8">
 
           {/* SIDEBAR */}
-          <div className="sm:w-56 flex sm:flex-col gap-2 text-sm">
+          <div className="sm:w-56 flex sm:flex-col gap-2 text-sm pr-6 relative">
+            <div className="hidden sm:block absolute right-0 top-0 h-full w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent" />
             {["Profile","Security","Terms & Conditions", "Credits"].map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
                 className={`text-left px-3 py-2 rounded-lg ${
                   tab === t
-                    ? "bg-gray-900 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
+  ? "bg-[#0F766E]/10 text-[#0F766E]"
+  : "text-gray-600 hover:bg-gray-100"
                 }`}
               >
                 {t}
@@ -113,7 +115,7 @@ const isGoogle = user?.app_metadata?.provider === "google";
           <div className="flex-1 space-y-6">
 
             {tab === "Profile" && (
-    <div className="card space-y-6">
+    <div className="space-y-6">
 
       <h2 className="font-semibold text-lg">Profile</h2>
 
@@ -126,9 +128,15 @@ const isGoogle = user?.app_metadata?.provider === "google";
 
       <div>
         <p className="text-xs text-gray-400 mb-1">Login Method</p>
-        <div className="border rounded-lg px-4 py-2 text-sm bg-gray-50">
-          {isGoogle ? "Google Account" : "Email & Password"}
-        </div>
+       <div className="border rounded-lg px-4 py-3 text-sm bg-gray-50 flex items-center justify-between">
+  <span>
+    {isGoogle ? "Login dengan Google" : "Login dengan Email"}
+  </span>
+
+  <span className="text-xs text-gray-400">
+    {isGoogle ? "Terhubung" : "Manual"}
+  </span>
+</div>
       </div>
 
       <button
@@ -142,7 +150,7 @@ const isGoogle = user?.app_metadata?.provider === "google";
   )}
 
             {tab === "Security" && (
-              <div className="card space-y-6">
+              <div className="space-y-6">
                 <h2 className="font-medium text-lg">Security</h2>
 
                 <Toggle
@@ -167,7 +175,7 @@ const isGoogle = user?.app_metadata?.provider === "google";
             )}
 
             {tab === "Terms & Conditions" && (
-  <div className="card space-y-6">
+  <div className="space-y-6">
     <h2 className="font-semibold text-lg">Terms & Conditions</h2>
 
     <div className="space-y-6 text-sm text-gray-700 leading-relaxed">
@@ -331,7 +339,7 @@ const isGoogle = user?.app_metadata?.provider === "google";
 )}
 
             {tab === "Credits" && (
-  <div className="card space-y-6">
+  <div className="space-y-6">
     <h2 className="font-medium text-lg">Credits</h2>
 
     <div className="space-y-4 text-sm text-gray-600 leading-relaxed">
