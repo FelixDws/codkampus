@@ -81,7 +81,7 @@ const banners = [
         <section className="space-y-6">
 
            <div className="flex justify-center">
-    <img src="/logo/logo.png" className="w-40 md:w-52" />
+    <img src="/logo/logo.png" className="w-56 md:w-72" />
   </div>
 
   {/* 🔥 SLIDER */}
