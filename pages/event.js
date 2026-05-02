@@ -16,6 +16,9 @@ export default function Quiz() {
   const [started, setStarted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(10);
   const [shuffledOptions, setShuffledOptions] = useState([]);
+  // 🔥 TAMBAH STATE
+const [ready, setReady] = useState(false);
+const [questionCount, setQuestionCount] = useState(5);
 
   const questionsPool = [
     { q: "Apa ibu kota Indonesia?", options: ["Jakarta","Bandung","Surabaya","Medan"], answer: "Jakarta" },
@@ -61,42 +64,45 @@ export default function Quiz() {
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
 
-  return arr.slice(0, 5);
+  return arr.slice(0, questionCount); // 🔥 DINAMIS
 };
 
   useEffect(() => {
-    setQuestions(getRandomQuestions());
+  supabase.auth.getSession().then(async ({ data }) => {
+    const u = data.session?.user;
+    setUser(u);
 
-    supabase.auth.getSession().then(async ({ data }) => {
-      const u = data.session?.user;
-      setUser(u);
+    if (u) {
+      const { data: userData } = await supabase
+        .from("users")
+        .select("coins, badge")
+        .eq("id", u.id)
+        .single();
 
-      if (u) {
-        const { data: userData } = await supabase
-          .from("users")
-          .select("coins, badge")
-          .eq("id", u.id)
-          .single();
-
-        setCoins(userData?.coins || 0);
-        setBadge(userData?.badge || null);
-      }
-    });
-  }, []);
+      setCoins(userData?.coins || 0);
+      setBadge(userData?.badge || null);
+    }
+  });
+}, []);
 
   useEffect(() => {
-    if (countdown <= 0) {
-      setStarted(true);
-      return;
-    }
-    const t = setTimeout(() => setCountdown(countdown - 1), 1000);
-    return () => clearTimeout(t);
-  }, [countdown]);
+  if (!ready) return; // 🔥 kunci utama
+
+  if (countdown <= 0) {
+    setStarted(true);
+    return;
+  }
+
+  const t = setTimeout(() => setCountdown(countdown - 1), 1000);
+  return () => clearTimeout(t);
+}, [countdown, ready]);
 
 
 
   useEffect(() => {
     if (!started || finished) return;
+
+    
 
     if (timeLeft <= 0) {
       handleNext();
@@ -108,17 +114,40 @@ export default function Quiz() {
   }, [timeLeft, started, finished]);
 
   useEffect(() => {
-  if (questions.length > 0) {
-    const opts = [...questions[index].options];
+  if (!started || finished) return;
 
-    for (let i = opts.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [opts[i], opts[j]] = [opts[j], opts[i]];
-    }
-
-    setShuffledOptions(opts);
+  if (timeLeft <= 0) {
+    handleNext();
+    return;
   }
-}, [index, questions]);
+
+  const t = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+  return () => clearTimeout(t);
+}, [timeLeft, started, finished]);
+
+// 🔥 TAMBAHKAN DI SINI
+useEffect(() => {
+  if (!started) return;
+  if (!questions.length) return;
+
+  const current = questions[index];
+  if (!current?.options) return;
+
+  const shuffled = [...current.options].sort(() => Math.random() - 0.5);
+  setShuffledOptions(shuffled);
+}, [index, started, questions]);
+
+  useEffect(() => {
+  if (!ready) return; // 🔥 STOP kalau belum klik mulai
+
+  if (countdown <= 0) {
+    setStarted(true);
+    return;
+  }
+
+  const t = setTimeout(() => setCountdown(countdown - 1), 1000);
+  return () => clearTimeout(t);
+}, [countdown, ready]);
 
   const handleNext = async () => {
     if (index + 1 < questions.length) {
@@ -164,113 +193,184 @@ export default function Quiz() {
     setBadge(type);
   };
 
-  if (!questions.length) return null;
 
-  const q = questions[index];
+  const q = questions[index] || {};
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#e6fffa] to-[#fef3c7]">
-      <Navbar />
+  <div className="min-h-screen bg-[#eef2f6] relative">
 
-      <div className="max-w-xl mx-auto p-6 text-center">
+    {/* BATIK */}
+    <div className="fixed inset-0 opacity-[0.04] pointer-events-none">
+      <img src="/batik.png" className="w-full h-full object-cover" />
+    </div>
 
-        {!started && (
-          <div className="text-5xl font-bold text-[#0F766E] animate-pulse">
-            {countdown > 0 ? countdown : "GO 🚀"}
+    <Navbar />
+
+    <div className="max-w-xl mx-auto px-4 py-10 text-center">
+
+      {/* 🔥 PRE START */}
+      {!ready && (
+        <div className="bg-white border rounded-2xl p-6 shadow-sm text-left">
+
+          <h2 className="text-lg font-semibold text-gray-800 mb-2">
+            Mulai Quiz
+          </h2>
+
+          <p className="text-sm text-gray-500 mb-4">
+            Pilih jumlah soal sebelum mulai
+          </p>
+
+          <div className="flex gap-2 mb-4">
+            {[5, 10].map((num) => (
+              <button
+                key={num}
+                onClick={() => setQuestionCount(num)}
+                className={`px-3 py-2 rounded-xl border text-sm
+                ${questionCount === num
+                  ? "bg-[#0F766E] text-white"
+                  : "bg-white hover:bg-gray-50"}`}
+              >
+                {num} Soal
+              </button>
+            ))}
           </div>
-        )}
 
-        {started && !finished && (
-          <div className="bg-white p-6 rounded-xl shadow">
-            <p className="text-red-500 font-bold mb-2">⏱ {timeLeft}s</p>
+          <button
+            onClick={() => {
+              setQuestions(getRandomQuestions());
+              setReady(true);
+              setCountdown(3);
+            }}
+            className="w-full bg-[#0F766E] text-white py-3 rounded-xl font-medium"
+          >
+            Mulai Quiz
+          </button>
 
-            <h2 className="font-bold mb-4">
-              Soal {index + 1}/5
-            </h2>
+        </div>
+      )}
 
-            <p className="mb-4">{q.q}</p>
+      {/* COUNTDOWN */}
+      {ready && !started && (
+        <div className="bg-white border rounded-2xl p-10 shadow-sm">
+          <p className="text-sm text-gray-500 mb-2">
+            Quiz dimulai dalam
+          </p>
+          <h1 className="text-4xl font-semibold text-[#0F766E]">
+            {countdown > 0 ? countdown : "Mulai"}
+          </h1>
+        </div>
+      )}
 
+      {/* QUIZ */}
+      {started && !finished && (
+        <div className="bg-white border rounded-2xl p-6 shadow-sm text-left">
+
+          <div className="flex justify-between items-center mb-4">
+            <p className="text-sm text-gray-500">
+              Soal {index + 1}/{questionCount}
+            </p>
+            <p className="text-sm font-medium text-red-500">
+              {timeLeft}s
+            </p>
+          </div>
+
+          <h2 className="font-semibold text-gray-800 mb-4">
+            {q.q}
+          </h2>
+
+          <div className="space-y-2">
             {shuffledOptions.map((opt, i) => (
               <button
                 key={i}
                 onClick={() => answerQuestion(opt)}
-                className="block w-full mb-2 bg-gray-100 p-2 rounded hover:bg-gray-200"
+                className="w-full text-left px-4 py-3 rounded-xl border 
+                           hover:border-[#0F766E] hover:bg-gray-50 transition"
               >
                 {opt}
               </button>
             ))}
           </div>
-        )}
 
-        {finished && (
-          <div className="bg-white p-6 rounded-xl shadow">
+        </div>
+      )}
 
-            <h2 className="text-xl font-bold">🎉 Selesai!</h2>
-            <p className="mt-2">Kamu dapet {score} coin</p>
+      {/* RESULT */}
+      {finished && (
+        <div className="bg-white border rounded-2xl p-6 shadow-sm">
 
-            <div className="mt-4">
-              <p>💰 Coin: {coins}</p>
-              {badge && <p>🏆 {badge}</p>}
+          <h2 className="text-lg font-semibold text-gray-800">
+            Hasil Quiz
+          </h2>
+
+          <p className="mt-2 text-gray-600">
+            Kamu mendapatkan <span className="font-semibold">{score}</span> coin
+          </p>
+
+          <div className="mt-4 text-sm text-gray-500">
+            Coin kamu: {coins}
+            {badge && <span> • {badge}</span>}
+          </div>
+
+          <div className="mt-6 space-y-3 text-left">
+
+            <p className="text-sm font-medium text-gray-700">
+              Upgrade Badge
+            </p>
+
+            <div className="border rounded-xl p-4">
+              <p className="font-medium text-gray-800">Quiz Pro</p>
+              <button
+                disabled={badge === "pro" || badge === "king"}
+                onClick={() => buyBadge("pro")}
+                className={`mt-3 w-full py-2 rounded-xl text-sm
+                ${badge === "pro" || badge === "king"
+                  ? "bg-gray-200 text-gray-500"
+                  : "bg-[#0F766E] text-white"}`}
+              >
+                {badge === "pro" || badge === "king"
+                  ? "Sudah dimiliki"
+                  : "Beli (100 coin)"}
+              </button>
             </div>
 
-            {/* 🔥 SHOP FINAL */}
-            <div className="mt-6 space-y-4">
-
-              <h3 className="font-bold text-lg">🛒 Shop Badge</h3>
-
-              <div className="border rounded-xl p-4 text-left shadow-sm">
-                <h4 className="font-bold text-blue-600">🧠 Quiz Pro</h4>
-                <button
-                  disabled={badge === "pro" || badge === "king"}
-                  onClick={() => buyBadge("pro")}
-                  className={`mt-3 w-full py-2 rounded-full
-                  ${badge === "pro" || badge === "king"
-                    ? "bg-gray-300 text-gray-600"
-                    : "bg-blue-500 text-white"}`}
-                >
-                  {badge === "pro" || badge === "king"
-                    ? "✔ Sudah Dibeli"
-                    : "Beli (100 coin)"}
-                </button>
-              </div>
-
-              <div className="border rounded-xl p-4 text-left shadow-sm">
-                <h4 className="font-bold text-yellow-600">👑 Quiz King</h4>
-                <button
-                  disabled={badge === "king"}
-                  onClick={() => buyBadge("king")}
-                  className={`mt-3 w-full py-2 rounded-full
-                  ${badge === "king"
-                    ? "bg-gray-300 text-gray-600"
-                    : "bg-yellow-500 text-white"}`}
-                >
-                  {badge === "king"
-                    ? "✔ Sudah Dibeli"
-                    : "Beli (300 coin)"}
-                </button>
-              </div>
-
+            <div className="border rounded-xl p-4">
+              <p className="font-medium text-gray-800">Quiz King</p>
+              <button
+                disabled={badge === "king"}
+                onClick={() => buyBadge("king")}
+                className={`mt-3 w-full py-2 rounded-xl text-sm
+                ${badge === "king"
+                  ? "bg-gray-200 text-gray-500"
+                  : "bg-yellow-500 text-white"}`}
+              >
+                {badge === "king"
+                  ? "Sudah dimiliki"
+                  : "Beli (300 coin)"}
+              </button>
             </div>
-
-            <button
-              onClick={() => {
-                setQuestions(getRandomQuestions());
-                setIndex(0);
-                setScore(0);
-                setFinished(false);
-                setCountdown(3);
-                setStarted(false);
-                setTimeLeft(10);
-              }}
-              className="mt-6 w-full bg-[#0F766E] text-white py-3 rounded-full font-bold"
-            >
-              🔁 Main Lagi
-            </button>
 
           </div>
-        )}
 
-      </div>
+          <button
+            onClick={() => {
+              setQuestions(getRandomQuestions());
+              setIndex(0);
+              setScore(0);
+              setFinished(false);
+              setCountdown(3);
+              setStarted(false);
+              setReady(false); // 🔥 RESET
+              setTimeLeft(10);
+            }}
+            className="mt-6 w-full bg-[#0F766E] text-white py-3 rounded-xl font-medium"
+          >
+            Ulangi Quiz
+          </button>
+
+        </div>
+      )}
+
     </div>
-  );
+  </div>
+);
 }

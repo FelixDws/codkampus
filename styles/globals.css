@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
 @layer components {
 
   /* CONTAINER */
@@ -11,7 +12,7 @@
 
   /* CARD */
   .card {
-    @apply bg-white p-5 sm:p-8 rounded-3xl shadow border border-gray-100;
+    @apply bg-white/95 backdrop-blur rounded-3xl shadow border border-gray-100;
   }
 
   /* TITLE */
@@ -38,10 +39,7 @@
     @apply w-20 h-20 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-[#0F766E];
   }
 
-  /* =========================
-     ANIMASI WHATSAPP STYLE
-     ========================= */
-
+  /* ANIMASI */
   @keyframes slideRight {
     from {
       transform: translateX(40px);
@@ -52,6 +50,21 @@
       opacity: 1;
     }
   }
+
+  @keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out;
+}
 
   @keyframes slideLeft {
     from {

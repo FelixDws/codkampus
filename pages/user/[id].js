@@ -3,12 +3,14 @@ import { useEffect, useState } from "react";
 import supabase from "../../lib/supabase";
 import Link from "next/link";
 import Navbar from "../../components/Navbar";
+import { MessageCircle } from "lucide-react";
 
 export default function UserProfile() {
   const router = useRouter();
   const { id } = router.query;
 
   const [profile, setProfile] = useState(null);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const formatPhone = (num) => {
@@ -23,23 +25,36 @@ export default function UserProfile() {
   useEffect(() => {
     if (!id) return;
 
-    const fetchProfile = async () => {
+    const fetchData = async () => {
       setLoading(true);
 
-      const { data } = await supabase
+      // 🔥 PROFILE
+      const { data: userData } = await supabase
         .from("users")
         .select("*")
         .eq("id", id)
         .single();
 
-      setProfile(data);
+      setProfile(userData);
+
+      // 🔥 PRODUK USER
+      const { data: userProducts } = await supabase
+        .from("market")
+        .select("*")
+        .eq("user_id", id)
+        .order("created_at", { ascending: false });
+
+      setProducts(userProducts || []);
+
       setLoading(false);
     };
 
-    fetchProfile();
+    fetchData();
   }, [id]);
 
-  if (loading) return <p className="p-5">Loading...</p>;
+  if (loading) {
+    return <p className="p-6 text-center text-gray-400">Loading...</p>;
+  }
 
   if (!profile) {
     return (
@@ -53,72 +68,126 @@ export default function UserProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#e6fffa] to-[#fef3c7]">
-      
+    <div className="min-h-screen bg-[#eef2f6] relative">
+
+      {/* BATIK */}
+      <div className="fixed inset-0 opacity-[0.04] pointer-events-none">
+        <img src="/batik.png" className="w-full h-full object-cover" />
+      </div>
+
       <Navbar />
 
-      <div className="flex justify-center items-center px-6 py-10">
+      {/* PROFILE */}
+      <div className="max-w-md mx-auto px-6 py-10">
 
-        <div className="bg-white w-full max-w-md p-6 rounded-3xl shadow-lg text-center">
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 text-center">
 
-          {/* AVATAR */}
           <img
-            src={profile.avatar_url || "https://via.placeholder.com/100"}
-            className="w-24 h-24 rounded-full object-cover mx-auto border-4 border-[#0F766E]"
+            src={profile.avatar_url || "https://ui-avatars.com/api/?name=User"}
+            className="w-20 h-20 rounded-full object-cover mx-auto border border-gray-300"
           />
 
-          {/* NAME */}
-          <h1 className="text-2xl font-bold mt-3 text-[#0F766E]">
+          <h1 className="text-lg font-semibold mt-3 text-gray-800">
             {profile.name || "User"}
           </h1>
 
-          {/* 🔥 BADGE */}
           {profile.badge && (
             <div className="mt-2 flex justify-center">
               <span
-                className={`px-3 py-1 text-xs rounded-full font-semibold
+                className={`px-3 py-1 text-xs rounded-full font-medium
                 ${profile.badge === "pro"
                   ? "bg-blue-100 text-blue-600"
                   : "bg-yellow-100 text-yellow-600"}`}
               >
-                {profile.badge === "pro" && "🧠 Quiz Pro"}
-                {profile.badge === "king" && "👑 Quiz King"}
+                {profile.badge === "pro" && "Quiz Pro"}
+                {profile.badge === "king" && "Quiz King"}
               </span>
             </div>
           )}
 
-          {/* BIO */}
-          <p className="text-gray-500 text-sm mt-1">
+          <p className="text-gray-500 text-sm mt-2">
             {profile.bio || "Belum ada bio"}
           </p>
 
           {/* EXP */}
-          <div className="mt-4">
+          <div className="mt-6 text-left space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">EXP</span>
+              <span className="font-medium text-gray-800">
+                {profile.exp || 0}
+              </span>
+            </div>
+
             <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
               <div
-                className="h-full bg-[#F59E0B]"
+                className="h-full bg-[#0F766E]"
                 style={{ width: `${(profile.exp % 50) * 2}%` }}
               />
             </div>
-            <p className="text-xs mt-1 text-gray-500">
-              EXP: {profile.exp || 0}
-            </p>
           </div>
 
-          {/* WHATSAPP */}
+          {/* CHAT */}
           {profile.phone && (
             <a
               href={waLink}
               target="_blank"
-              className="block mt-5 bg-green-500 hover:bg-green-600 transition text-white px-4 py-3 rounded-full"
+              className="flex items-center justify-center gap-2 mt-6 
+                         bg-[#0F766E] hover:opacity-90 transition 
+                         text-white px-4 py-3 rounded-xl font-medium"
             >
-              Chat WhatsApp
+              <MessageCircle size={18} />
+              Chat via WhatsApp
             </a>
           )}
 
         </div>
 
       </div>
+
+      {/* 🔥 PRODUK */}
+      <div className="max-w-5xl mx-auto px-6 pb-10">
+
+        <h2 className="text-sm font-semibold text-gray-700 mb-4">
+          Barang Dijual
+        </h2>
+
+        {products.length === 0 ? (
+          <p className="text-xs text-gray-400">
+            Belum ada barang
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+            {products.map((item) => (
+              <Link key={item.id} href={`/product/${item.id}`}>
+                <div className="bg-white border rounded-xl overflow-hidden hover:shadow-md transition cursor-pointer">
+
+                  <div className="aspect-square bg-gray-100">
+                    <img
+                      src={item.image_url || "/placeholder.jpg"}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+
+                  <div className="p-3">
+                    <p className="text-xs font-medium line-clamp-1">
+                      {item.name}
+                    </p>
+
+                    <p className="text-[#0F766E] text-xs font-semibold mt-1">
+                      Rp {item.price?.toLocaleString()}
+                    </p>
+                  </div>
+
+                </div>
+              </Link>
+            ))}
+
+          </div>
+        )}
+
+      </div>
+
     </div>
   );
 }

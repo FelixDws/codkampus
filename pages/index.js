@@ -2,20 +2,33 @@ import Navbar from "../components/Navbar";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import supabase from "../lib/supabase";
-import { MessageCircle, Gamepad2, Trophy, Store } from "lucide-react";
+import { MessageCircle, Trophy, Store, Pencil } from "lucide-react";
+import { Plus_Jakarta_Sans } from "next/font/google";
+import Onboarding from "../components/Onboarding";
+
+
+
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
 
 export default function Home() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [products, setProducts] = useState([]);
-
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
-const banners = [
-  "/banner1.jpg",
-  "/banner2.jpg",
-  "/banner3.jpg"
-];
+  const banners = ["/banner1.jpg", "/banner2.jpg", "/banner3.jpg"];
+
+  useEffect(() => {
+  const done = localStorage.getItem("onboarding_done");
+
+  if (!done) {
+    setShowOnboarding(true);
+  }
+}, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -37,12 +50,12 @@ const banners = [
   }, []);
 
   useEffect(() => {
-  const interval = setInterval(() => {
-    setCurrentSlide((prev) => (prev + 1) % banners.length);
-  }, 4000);
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % banners.length);
+    }, 4000);
 
-  return () => clearInterval(interval);
-}, []);
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchProducts = async () => {
     const { data } = await supabase
@@ -54,186 +67,204 @@ const banners = [
     setProducts(data || []);
   };
 
-  const features = [
-    { title: "Forum", link: "/forum", icon: MessageCircle },
-    { title: "Quiz", link: "/event", icon: Gamepad2 },
-    { title: "Top Member", link: "/leaderboard", icon: Trophy }
-  ];
-
   return (
-    <div className="min-h-screen bg-[#f8fafc]">
+    <div className={`${jakarta.className} min-h-screen bg-[#f8fafc] relative`}>
+
+      {/* BATIK BACKGROUND */}
+      <div className="fixed inset-0 opacity-[0.04] pointer-events-none">
+        <img src="/batik.png" className="w-full h-full object-cover" />
+      </div>
+
       <Navbar />
 
-      <main className="max-w-5xl mx-auto px-6 py-10 space-y-16">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-20 py-6 sm:py-10 space-y-12">
 
-        {/* AVATAR */}
-        {user && (
+        {/* 🔥 TAMBAHAN: BULATAN PROFILE (TIDAK MENGGANGGU UI LAMA) */}
+        
           <div className="flex justify-end">
             <Link href="/profile">
               <img
-                src={profile?.avatar_url || "https://via.placeholder.com/40"}
-                className="w-10 h-10 rounded-full cursor-pointer"
+                src={
+  profile?.avatar_url ||
+  `https://ui-avatars.com/api/?name=${profile?.username || "User"}&background=0F766E&color=fff`
+}
+                className="w-10 h-10 rounded-full cursor-pointer border border-gray-200 hover:scale-105 transition"
               />
             </Link>
           </div>
-        )}
+        
 
-        <section className="space-y-6">
+        {/* 🔥 PROFILE BAR (TETAP ADA, TIDAK DIHAPUS) */}
+        
 
-           <div className="flex justify-center">
-    <img src="/logo/logo.png" className="w-56 md:w-72" />
-  </div>
+        {/* HERO */}
+        <section className="text-center space-y-6">
 
-  {/* 🔥 SLIDER */}
-  <div className="relative w-full aspect-[2/1] rounded-2xl overflow-hidden">
+          <img 
+            src="/logo/logo.png" 
+            className="w-56 md:w-72 mx-auto animate-fade-in"
+          />
 
-    {banners.map((img, index) => (
-      <img
-        key={index}
-        src={img}
-        className={`absolute w-full h-full object-cover transition-opacity duration-700 ${
-          index === currentSlide ? "opacity-100" : "opacity-0"
-        }`}
-      />
-    ))}
+          <div>
+            {/* 🔥 FONT DISEDIKIT DI-UPGRADE (TANPA UBAH STYLE BESAR) */}
+            <h1 className="text-2xl md:text-3xl font-semibold tracking-tight leading-tight text-[#0F766E]">
+              Marketplace Mahasiswa
+            </h1>
 
-    {/* DOT INDICATOR */}
-    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
-      {banners.map((_, i) => (
-        <div
-          key={i}
-          className={`w-2 h-2 rounded-full ${
-            i === currentSlide ? "bg-white" : "bg-white/50"
-          }`}
-        />
-      ))}
-    </div>
+            <p className="text-gray-500 text-sm mt-1">
+              Jual beli langsung. COD aman. Tanpa ribet.
+            </p>
+          </div>
 
-  </div>
+          {/* SLIDER */}
+          <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden">
 
-  {/* TEXT */}
-  <div className="text-center space-y-3">
+            {banners.map((img, index) => (
+              <img
+                key={index}
+                src={img}
+                className={`absolute w-full h-full object-cover transition-all duration-700 ${
+                  index === currentSlide 
+                    ? "opacity-100 scale-100" 
+                    : "opacity-0 scale-105"
+                }`}
+              />
+            ))}
 
-    <h1 className="text-3xl font-bold text-[#0F766E]">
-      Marketplace Mahasiswa Tanpa Ribet
-    </h1>
+            <button
+              onClick={() =>
+                setCurrentSlide((prev) =>
+                  prev === 0 ? banners.length - 1 : prev - 1
+                )
+              }
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/30 text-white px-2 rounded"
+            >
+              ‹
+            </button>
 
-    <p className="text-gray-600">
-      Jual beli langsung antar mahasiswa. COD. Cepat. Aman.
-    </p>
+            <button
+              onClick={() =>
+                setCurrentSlide((prev) => (prev + 1) % banners.length)
+              }
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/30 text-white px-2 rounded"
+            >
+              ›
+            </button>
 
-    <p className="text-sm text-gray-400">
-      Jual beli, diskusi, & cuan bareng mahasiswa <br />
-      #NoRibet #CODAja
-    </p>
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
+              {banners.map((_, i) => (
+                <div
+                  key={i}
+                  onClick={() => setCurrentSlide(i)}
+                  className={`w-2 h-2 rounded-full cursor-pointer ${
+                    i === currentSlide ? "bg-white" : "bg-white/40"
+                  }`}
+                />
+              ))}
+            </div>
 
-    {/* CTA */}
-    <div className="flex justify-center gap-3 mt-3">
-      <Link href="/market">
-        <button className="flex items-center gap-2 bg-[#0F766E] text-white px-5 py-2.5 rounded-lg font-medium">
-          <Store size={18} />
-          Marketplace
-        </button>
-      </Link>
+          </div>
 
-      <Link href="/forum">
-        <button className="flex items-center gap-2 border border-[#0F766E] text-[#0F766E] px-5 py-2.5 rounded-lg font-medium hover:bg-[#0F766E] hover:text-white transition">
-          <MessageCircle size={18} />
-          Forum
-        </button>
-      </Link>
-    </div>
+          {/* CTA */}
+          <div className="flex flex-col items-center gap-4">
 
-  </div>
+            <div className="flex gap-3">
 
-</section>
+              <Link href="/market">
+                <button className="flex items-center gap-2 bg-[#0F766E] text-white px-6 py-2.5 rounded-xl text-sm shadow-sm hover:shadow-md transition active:scale-95">
+                  <Store size={16} />
+                  Marketplace
+                </button>
+              </Link>
+
+              <Link href="/forum">
+                <button className="flex items-center gap-2 border border-[#0F766E] text-[#0F766E] px-6 py-2.5 rounded-xl text-sm hover:bg-[#0F766E] hover:text-white transition active:scale-95">
+                  <MessageCircle size={16} />
+                  Forum
+                </button>
+              </Link>
+
+            </div>
+
+            <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-[#0F766E]/40 to-transparent" />
+
+          </div>
+
+        </section>
 
         {/* VALUE */}
-        <section className="flex justify-center gap-10 text-sm text-gray-600">
-          <div className="flex items-center gap-2">
-            <Store size={16} /> Tanpa ongkir
+        <section className="flex justify-center gap-6 text-xs text-gray-500">
+          <div className="flex items-center gap-1">
+            <Store size={14} /> Tanpa ongkir
           </div>
-          <div className="flex items-center gap-2">
-            <MessageCircle size={16} /> COD langsung
+          <div className="flex items-center gap-1">
+            <MessageCircle size={14} /> COD langsung
           </div>
-          <div className="flex items-center gap-2">
-            <Trophy size={16} /> Khusus mahasiswa
+          <div className="flex items-center gap-1">
+            <Trophy size={14} /> Khusus mahasiswa
           </div>
         </section>
 
         {/* PRODUK */}
         <section>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="font-semibold text-[#0F766E]">
+
+          <div className="flex justify-between mb-3">
+            <h2 className="text-[#0F766E] font-semibold text-sm">
               Barang Terbaru
             </h2>
 
-            <Link href="/market" className="text-sm text-gray-500 hover:text-[#0F766E]">
-              Lihat semua →
+            <Link href="/market" className="text-xs text-gray-400">
+              Lihat semua
             </Link>
           </div>
 
           {products.length === 0 ? (
             <p className="text-gray-400 text-sm">Belum ada barang</p>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+
               {products.map((item) => (
-                <Link key={item.id} href={`/user/${item.user_id}`}>
-                  <div className="cursor-pointer group">
+                <Link key={item.id} href={`/product/${item.id}`}>
+                  <div className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition">
 
-                    <img
-                      src={item.image_url || "https://via.placeholder.com/150"}
-                      className="rounded-lg mb-2 group-hover:scale-105 transition"
-                    />
+                    <div className="aspect-square bg-gray-100">
+                      <img
+                        src={item.image_url || "/placeholder.jpg"}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
 
-                    <p className="text-sm font-medium line-clamp-1">
-                      {item.title}
-                    </p>
+                    <div className="p-2">
+                      <p className="text-xs font-medium line-clamp-1">
+                        {item.name}
+                      </p>
 
-                    <p className="text-xs text-gray-500">
-                      Rp {item.price?.toLocaleString()}
-                    </p>
+                      <p className="text-[#0F766E] text-xs font-semibold">
+                        Rp {Number(item.price).toLocaleString("id-ID")}
+                      </p>
+                    </div>
 
                   </div>
                 </Link>
               ))}
+
             </div>
           )}
         </section>
 
-        {/* 🔥 FITUR (SHOPEE STYLE) */}
-        <section>
-          <h2 className="font-semibold text-[#0F766E] mb-4">
-            Fitur Lainnya
-          </h2>
-
-          <div className="grid grid-cols-3 gap-6 text-center">
-            {features.map((item, i) => (
-              <Link key={i} href={item.link}>
-                <div className="flex flex-col items-center gap-2 cursor-pointer group">
-
-                  <div className="w-14 h-12 flex items-center justify-center rounded-xl bg-[#f1f5f9] group-hover:bg-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition">
-                    <item.icon size={22} className="text-[#0F766E]" />
-                  </div>
-
-                  <p className="text-xs text-gray-600 group-hover:text-[#0F766E]">
-                    Masuk {item.title}
-                  </p>
-
-                </div>
-              </Link>
-            ))}
-          </div>
+        {/* TRUST */}
+        <section className="text-center text-xs text-gray-400">
+          Digunakan oleh mahasiswa Indonesia
         </section>
 
-        {/* CTA */}
+        {/* CTA LOGIN */}
         {!user && (
-          <section className="text-center space-y-3">
-            <h2 className="font-semibold text-[#0F766E]">
-              Gabung Sekarang
+          <section className="text-center space-y-2">
+            <h2 className="text-sm font-semibold text-[#0F766E]">
+              Gabung sekarang
             </h2>
 
-            <div className="flex justify-center gap-4">
+            <div className="flex justify-center gap-3">
               <Link href="/login">
                 <button className="btn-main">Login</button>
               </Link>
@@ -246,6 +277,14 @@ const banners = [
         )}
 
       </main>
+      {showOnboarding && (
+  <Onboarding
+    onFinish={() => {
+      localStorage.setItem("onboarding_done", "true");
+      setShowOnboarding(false);
+    }}
+  />
+)}
     </div>
   );
 }

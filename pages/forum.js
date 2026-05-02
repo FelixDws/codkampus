@@ -11,6 +11,7 @@ export default function Forum() {
   const [loading, setLoading] = useState(false);
   const [exp, setExp] = useState(0);
   const [replyTo, setReplyTo] = useState(null);
+  const [activeMenu, setActiveMenu] = useState(null);
 
   // ✅ TAMBAHAN ONLINE
   const [onlineUsers, setOnlineUsers] = useState([]);
@@ -210,135 +211,201 @@ export default function Forum() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-[#e6fffa] to-[#fef3c7]">
+  <div className="h-screen flex flex-col bg-[#eef2f6] relative">
 
-      <div className="sticky top-0 z-50 bg-[#0F766E] text-white px-4 py-3">
-        <div className="flex items-center justify-between">
-          <button onClick={() => router.push("/")} className="bg-white/20 px-3 py-1 rounded-full">
-            ←
-          </button>
+    {/* BATIK */}
+    <div className="fixed inset-0 opacity-[0.05] pointer-events-none">
+      <img src="/batik.png" className="w-full h-full object-cover" />
+    </div>
 
-          <div className="text-center">
-            <h1 className="font-bold">💬 Forum CODKampus</h1>
+    {/* HEADER */}
+    <div className="sticky top-0 z-50 bg-[#0F766E] text-white px-4 py-3 shadow-sm">
+      <div className="flex items-center justify-between">
 
-            <div className="w-32 h-2 bg-white/20 rounded-full mt-1 overflow-hidden">
-              <div className="h-full bg-[#F59E0B]" style={{ width: `${(exp % 50) * 2}%` }} />
-            </div>
-
-            <p className="text-xs opacity-80">EXP: {exp}</p>
-          </div>
-
-          <div className="w-6"></div>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-3">
-
-        {(() => {
-          let lastDate = null;
-
-          return posts.map((p, i) => {
-            const isMe = p.user_id === user?.id;
-            const profile = profiles[p.user_id?.trim?.()];
-            const parent = posts.find(x => x.id === p.parent_id);
-
-            const isOnline = onlineUsers.includes(p.user_id); // ✅ TAMBAHAN
-
-            const currentDate = new Date(p.created_at).toDateString();
-            const showDate = currentDate !== lastDate;
-            lastDate = currentDate;
-
-            return (
-              <div key={i}>
-
-                {showDate && (
-                  <div className="text-center my-2">
-                    <span className="bg-[#e5ddd5] text-gray-700 text-xs px-4 py-1 rounded-full shadow">
-                      {formatDateHeader(p.created_at)}
-                    </span>
-                  </div>
-                )}
-
-                <div className={`flex ${isMe ? "justify-end" : ""}`}>
-
-                  {!isMe && (
-                    <Link href={`/user/${p.user_id}`}>
-                      <img
-                        src={profile?.avatar_url || "https://via.placeholder.com/40"}
-                        className="w-8 h-8 rounded-full mr-2 cursor-pointer"
-                      />
-                    </Link>
-                  )}
-
-                  <div className={`max-w-[75%] break-words p-3 rounded-2xl shadow ${isMe ? "bg-[#0F766E] text-white" : "bg-white"}`}>
-
-                    {!isMe && (
-                      <Link href={`/user/${p.user_id}`}>
-                        <div className="flex items-center gap-1">
-                          <p className="text-xs font-bold text-[#0F766E] cursor-pointer hover:underline">
-                            {profile?.name || "User"}
-                          </p>
-
-                          {/* 🟢 ONLINE */}
-                          <span className={`w-2 h-2 rounded-full ${isOnline ? "bg-green-500" : "bg-gray-400"}`} />
-                        </div>
-                      </Link>
-                    )}
-
-                    {parent && (
-                      <div className="text-xs bg-black/10 p-2 rounded mb-1">
-                        {parent.content}
-                      </div>
-                    )}
-
-                    <p>{p.content}</p>
-
-                    <p className="text-xs mt-1 opacity-70">
-                      {formatTime(p.created_at)}
-                    </p>
-
-                    <div className="flex gap-2 mt-1">
-                      <button onClick={() => setReplyTo(p)} className="text-xs text-blue-400">
-                        Reply
-                      </button>
-
-                      {isMe && (
-                        <button onClick={() => deleteMessage(p.id)} className="text-xs text-red-400">
-                          Hapus
-                        </button>
-                      )}
-                    </div>
-
-                  </div>
-                </div>
-              </div>
-            );
-          });
-        })()}
-
-        <div ref={bottomRef}></div>
-      </div>
-
-      {replyTo && (
-        <div className="px-3 py-2 bg-yellow-100 text-sm flex justify-between">
-          <span>Reply: {replyTo.content.slice(0, 30)}...</span>
-          <button onClick={() => setReplyTo(null)}>❌</button>
-        </div>
-      )}
-
-      <div className="p-3 flex gap-2 bg-white border-t">
-        <input
-          className="flex-1 p-3 rounded-full border"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Tulis sesuatu..."
-        />
-
-        <button onClick={sendMessage} className="bg-[#F59E0B] text-white px-5 rounded-full">
-          {loading ? "..." : "Kirim"}
+        <button
+          onClick={() => router.push("/")}
+          className="text-sm bg-white/20 px-3 py-1 rounded-lg"
+        >
+          ←
         </button>
+
+        <div className="text-center">
+          <h1 className="font-semibold">Forum CODKampus</h1>
+          <p className="text-xs opacity-80">Diskusi antar mahasiswa</p>
+        </div>
+
+        <div className="text-xs opacity-80">
+          EXP {exp}
+        </div>
+
       </div>
     </div>
-  );
+
+    {/* CHAT */}
+    <div className="flex-1 overflow-y-auto px-3 py-4 space-y-3">
+
+      {(() => {
+        let lastDate = null;
+
+        return posts.map((p, i) => {
+          const isMe = p.user_id === user?.id;
+          const profile = profiles[p.user_id?.trim?.()];
+          const parent = posts.find(x => x.id === p.parent_id);
+          const isOnline = onlineUsers.includes(p.user_id);
+
+          const currentDate = new Date(p.created_at).toDateString();
+          const showDate = currentDate !== lastDate;
+          lastDate = currentDate;
+
+          return (
+            <div key={i}>
+
+              {/* DATE */}
+              {showDate && (
+                <div className="text-center my-3">
+                  <span className="bg-gray-300 text-gray-700 text-xs px-3 py-1 rounded-full">
+                    {formatDateHeader(p.created_at)}
+                  </span>
+                </div>
+              )}
+
+              <div className={`flex ${isMe ? "justify-end" : ""}`}>
+
+                {!isMe && (
+                  <Link href={`/user/${p.user_id}`}>
+                    <img
+                      src={profile?.avatar_url || "https://via.placeholder.com/40"}
+                      className="w-8 h-8 rounded-full mr-2 cursor-pointer"
+                    />
+                  </Link>
+                )}
+
+                <div
+                  className={`max-w-[75%] p-3 rounded-2xl text-sm shadow-sm
+                  ${isMe
+                    ? "bg-[#0F766E] text-white"
+                    : "bg-white shadow-sm border border-gray-200 text-gray-800 border border-gray-200"
+                  }`}
+                >
+
+                  {!isMe && (
+                    <div className="flex items-center gap-1 mb-1">
+                      <p className="text-xs font-semibold text-[#0F766E]">
+                        {profile?.name || "User"}
+                      </p>
+
+                      <span
+                        className={`w-2 h-2 rounded-full ${
+                          isOnline ? "bg-green-500" : "bg-gray-400"
+                        }`}
+                      />
+                    </div>
+                  )}
+
+                  {/* REPLY */}
+                  {parent && (
+                    <div className="text-xs bg-gray-200 p-2 rounded mb-1 text-gray-700">
+                      {parent.content}
+                    </div>
+                  )}
+
+                  <p>{p.content}</p>
+
+                  <p className="text-[10px] mt-1 opacity-60">
+                    {formatTime(p.created_at)}
+                  </p>
+
+                  {/* ACTION MENU */}
+                  <div className="flex justify-end mt-1 relative">
+
+                    <div className="relative z-20">
+  <div className="relative z-20">
+  <button
+    onClick={() =>
+      setActiveMenu(activeMenu === p.id ? null : p.id)
+    }
+    className="flex items-center justify-center 
+               w-6 h-6 rounded-md 
+               bg-gray-200 text-gray-700 
+               hover:bg-[#0F766E] hover:text-white 
+               transition"
+  >
+    ⋮
+  </button>
+</div>
+</div>
+
+                    {activeMenu === p.id && (
+  <div className="absolute right-0 bottom-8 bg-white border border-gray-200 rounded-xl shadow-xl text-sm z-[999] w-40 overflow-hidden animate-fadeIn">
+
+    {/* REPLY */}
+    <button
+      onClick={() => {
+        setReplyTo(p);
+        setActiveMenu(null);
+      }}
+      className="w-full text-left px-4 py-2 flex items-center gap-2 text-gray-700 hover:bg-gray-100 transition"
+    >
+      <span>Reply</span>
+    </button>
+
+    {/* DELETE */}
+    {isMe && (
+      <button
+        onClick={() => {
+          deleteMessage(p.id);
+          setActiveMenu(null);
+        }}
+        className="w-full text-left px-4 py-2 flex items-center gap-2 text-red-600 hover:bg-red-50 transition"
+      >
+        <span>Hapus</span>
+      </button>
+    )}
+
+  </div>
+)}
+
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          );
+        });
+      })()}
+
+      <div ref={bottomRef}></div>
+    </div>
+
+    {/* REPLY BAR */}
+    {replyTo && (
+      <div className="px-3 py-2 bg-gray-200 text-sm flex justify-between">
+        <span className="text-gray-700">
+          Reply: {replyTo.content.slice(0, 30)}...
+        </span>
+        <button onClick={() => setReplyTo(null)}>✕</button>
+      </div>
+    )}
+
+    {/* INPUT */}
+    <div className="p-3 flex gap-2 bg-white border-t">
+
+      <input
+        className="flex-1 p-3 rounded-xl border text-sm bg-[#f8fafc]"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder="Tulis pesan..."
+      />
+
+      <button
+        onClick={sendMessage}
+        className="bg-[#0F766E] text-white px-4 rounded-xl text-sm"
+      >
+        {loading ? "..." : "Kirim"}
+      </button>
+
+    </div>
+  </div>
+);
 }

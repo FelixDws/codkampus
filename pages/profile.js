@@ -142,59 +142,105 @@ export default function Profile() {
     : "";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#e6fffa] to-[#fef3c7]">
-      <Navbar />
+  <div className="min-h-screen bg-[#eef2f6] relative">
 
-      <div className="max-w-xl mx-auto px-6 py-10">
-        <div className="bg-white p-8 rounded-3xl shadow-lg">
+    {/* BATIK */}
+    <div className="fixed inset-0 opacity-[0.04] pointer-events-none">
+      <img src="/batik.png" className="w-full h-full object-cover" />
+    </div>
 
-          <h1 className="text-3xl font-bold text-[#0F766E] text-center mb-6">
-            👤 Profil Kamu
+    <Navbar />
+
+    <div className="max-w-xl mx-auto px-6 py-10">
+
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+
+        {/* HEADER */}
+        <div className="mb-6">
+          <h1 className="text-xl font-semibold text-gray-800">
+            Profil
           </h1>
+          <p className="text-sm text-gray-500">
+            Kelola informasi akun kamu
+          </p>
+        </div>
 
-          <div className="flex flex-col items-center mb-6">
-            <img
-              src={avatarUrl || "https://via.placeholder.com/120"}
-              className="w-28 h-28 rounded-full border-4 border-[#0F766E]"
-            />
+        {/* AVATAR */}
+        <div className="flex items-center gap-4 mb-6">
 
+          <img
+            src={avatarUrl || "https://ui-avatars.com/api/?name=User"}
+            className="w-20 h-20 rounded-full object-cover border border-gray-300"
+          />
+
+          <div>
+            <p className="text-sm text-gray-600 mb-2">
+              Foto Profil
+            </p>
+
+            <label className="text-sm px-3 py-1.5 border rounded-lg cursor-pointer hover:bg-gray-50 transition">
+              Upload
+              <input
+                type="file"
+                onChange={(e) => setAvatarFile(e.target.files[0])}
+                className="hidden"
+              />
+            </label>
+          </div>
+
+        </div>
+
+        {/* FORM */}
+        <div className="space-y-4">
+
+          {/* NAME */}
+          <div>
+            <label className="text-xs text-gray-500">Nama</label>
             <input
-              type="file"
-              onChange={(e) => setAvatarFile(e.target.files[0])}
-              className="mt-3"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full mt-1 p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F766E]"
             />
           </div>
 
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Nama"
-            className="w-full mb-4 p-3 border rounded-xl"
-          />
+          {/* PHONE */}
+          <div>
+            <label className="text-xs text-gray-500">WhatsApp</label>
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full mt-1 p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F766E]"
+            />
+          </div>
 
-          <input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="Nomor WhatsApp (contoh: 08123...)"
-            className="w-full mb-4 p-3 border rounded-xl"
-          />
+          {/* BIO */}
+          <div>
+            <label className="text-xs text-gray-500">Bio</label>
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              rows={3}
+              className="w-full mt-1 p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F766E]"
+            />
+          </div>
 
-          <textarea
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            placeholder="Bio"
-            className="w-full mb-4 p-3 border rounded-xl"
-          />
+        </div>
+
+        {/* ACTION */}
+        <div className="mt-6">
 
           <button
             onClick={saveProfile}
-            className="w-full bg-[#0F766E] text-white p-3 rounded-full"
+            className="w-full bg-[#0F766E] text-white py-3 rounded-xl font-medium hover:opacity-90 transition"
           >
-            {loading ? "Saving..." : "Simpan"}
+            {loading ? "Menyimpan..." : "Simpan Perubahan"}
           </button>
 
         </div>
+
       </div>
+
     </div>
-  );
+  </div>
+);
 }

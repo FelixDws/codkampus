@@ -63,14 +63,16 @@ export default function Login() {
       <div className="w-full max-w-md">
 
         {/* BRAND */}
-        <div className="mb-6 text-center">
-          <h1 className="text-3xl font-bold text-[#0F766E]">
-            CODKampus
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Marketplace mahasiswa terpercaya
-          </p>
-        </div>
+        <div className="flex flex-col items-center text-center leading-none">
+
+  <img
+    src="/logo/logo.png"
+    className="w-52 md:w-60 h-auto object-contain -mb-2"
+    alt="CODKampus Logo"
+  />
+
+
+</div>
 
         {/* CARD */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
