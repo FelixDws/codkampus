@@ -5,6 +5,7 @@ import supabase from "../lib/supabase";
 import { MessageCircle, Trophy, Store, Pencil } from "lucide-react";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import Onboarding from "../components/Onboarding";
+import Head from "next/head";
 
 
 
@@ -68,6 +69,12 @@ export default function Home() {
   };
 
   return (
+  <>
+    <Head>
+      <title>CODKampus</title>
+      <link rel="icon" href="/favicon.ico" />
+    </Head>
+
     <div className={`${jakarta.className} min-h-screen bg-[#f8fafc] relative`}>
 
       {/* BATIK BACKGROUND */}
@@ -286,5 +293,6 @@ export default function Home() {
   />
 )}
     </div>
+    </>
   );
 }
