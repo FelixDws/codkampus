@@ -99,6 +99,9 @@ setTimeout(() => {
   };
 
   const addItem = async () => {
+
+    if (loading) return;
+    
     if (!name.trim() || !price.trim()) {
       alert("Isi nama & harga dulu");
       return;
@@ -307,9 +310,13 @@ const { error } = await supabase.from("market").insert([
   />
 )}
 
-        <button onClick={addItem} className="btn-main w-full">
-          Jual
-        </button>
+        <button
+  onClick={addItem}
+  disabled={loading}
+  className="btn-main w-full disabled:opacity-60"
+>
+  {loading ? "Mengupload..." : "Jual"}
+</button>
 
         <button
           onClick={() => setShowPopup(false)}
