@@ -112,38 +112,33 @@ setTimeout(() => {
 
 // 🔥 UPLOAD KE STORAGE
 if (image) {
-  if (image.type !== "image/jpeg") {
-    alert("Hanya JPG");
+  // validasi
+  if (!image.type.startsWith("image/")) {
+    alert("File harus berupa gambar");
     setLoading(false);
     return;
   }
 
-  if (image.size > 1 * 1024 * 1024) {
-  compressedImage = await imageCompression(image, options);
-}
-
-  const fileName = `${Date.now()}-${Math.random()}-${image.name}`;
   let compressedImage = image;
 
-if (image.size > 1 * 1024 * 1024) {
   try {
     const options = {
-      maxSizeMB: 1,
+      maxSizeMB: 0.7,
       maxWidthOrHeight: 1280,
       useWebWorker: true,
       fileType: "image/jpeg",
-      initialQuality: 0.8,
+      initialQuality: 0.7,
     };
 
     compressedImage = await imageCompression(image, options);
   } catch (err) {
     console.log("Compress error:", err);
   }
-}
+
+  const fileName = `${Date.now()}-${Math.random()}-${image.name}`;
 
   const { error: uploadError } = await supabase.storage
     .from("market-images")
-    
     .upload(fileName, compressedImage);
 
   if (uploadError) {
@@ -287,7 +282,7 @@ const { error } = await supabase.from("market").insert([
           className="input mb-2 w-full"
         />
 
-        <label className="btn-main w-full text-center cursor-pointer mb-3">
+        <label className="w-full border border-gray-300 py-2.5 rounded-xl text-sm text-center cursor-pointer hover:bg-gray-50 transition mb-3">
   📸 Ambil / Upload Foto
   <input
     type="file"
