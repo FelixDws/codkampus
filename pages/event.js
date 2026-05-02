@@ -15,6 +15,7 @@ export default function Quiz() {
   const [countdown, setCountdown] = useState(3);
   const [started, setStarted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(10);
+  const [shuffledOptions, setShuffledOptions] = useState([]);
 
   const questionsPool = [
     { q: "Apa ibu kota Indonesia?", options: ["Jakarta","Bandung","Surabaya","Medan"], answer: "Jakarta" },
@@ -53,8 +54,15 @@ export default function Quiz() {
   ];
 
   const getRandomQuestions = () => {
-    return [...questionsPool].sort(() => Math.random() - 0.5).slice(0, 5);
-  };
+  const arr = [...questionsPool];
+
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+
+  return arr.slice(0, 5);
+};
 
   useEffect(() => {
     setQuestions(getRandomQuestions());
@@ -85,6 +93,8 @@ export default function Quiz() {
     return () => clearTimeout(t);
   }, [countdown]);
 
+
+
   useEffect(() => {
     if (!started || finished) return;
 
@@ -96,6 +106,19 @@ export default function Quiz() {
     const t = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
     return () => clearTimeout(t);
   }, [timeLeft, started, finished]);
+
+  useEffect(() => {
+  if (questions.length > 0) {
+    const opts = [...questions[index].options];
+
+    for (let i = opts.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [opts[i], opts[j]] = [opts[j], opts[i]];
+    }
+
+    setShuffledOptions(opts);
+  }
+}, [index, questions]);
 
   const handleNext = async () => {
     if (index + 1 < questions.length) {
@@ -167,7 +190,7 @@ export default function Quiz() {
 
             <p className="mb-4">{q.q}</p>
 
-            {q.options.map((opt, i) => (
+            {shuffledOptions.map((opt, i) => (
               <button
                 key={i}
                 onClick={() => answerQuestion(opt)}

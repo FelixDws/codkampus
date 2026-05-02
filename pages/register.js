@@ -1,6 +1,7 @@
 import { useState } from "react";
 import supabase from "../lib/supabase";
 import { useRouter } from "next/router";
+import { Mail, Lock, Info } from "lucide-react";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -12,7 +13,7 @@ export default function Register() {
 
   const register = async () => {
     if (!email || !password) {
-      alert("Isi semua!");
+      alert("Mohon isi email dan password");
       return;
     }
 
@@ -29,116 +30,172 @@ export default function Register() {
         password: password.trim(),
       });
 
-      // ❌ kalau error baru gagal
       if (error) {
         alert(error.message);
         return;
       }
 
-      // ✅ SUCCESS (meskipun belum login karena email confirm ON)
-      alert("📩 Email verifikasi sudah dikirim! Cek inbox kamu ya.");
-
+      alert("Email verifikasi telah dikirim. Silakan cek inbox Anda.");
       router.push("/login");
 
     } catch (err) {
-      console.error("REGISTER ERROR:", err);
-      alert("Terjadi kesalahan besar");
+      console.error(err);
+      alert("Terjadi kesalahan, silakan coba lagi");
     } finally {
       setLoading(false);
     }
   };
 
+  const loginWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+
+    if (error) alert(error.message);
+  };
+
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      register();
-    }
+    if (e.key === "Enter") register();
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#e6fffa] to-[#fef3c7] px-4">
+    <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center px-4">
 
-      <div className="bg-white w-full max-w-md p-8 rounded-3xl shadow-lg border">
+      <div className="w-full max-w-md">
 
-        <h1 className="text-3xl font-bold text-center text-[#0F766E] mb-6">
-          📝 Daftar CODKampus
-        </h1>
-
-        <input
-          id="email"
-          name="email"
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          onKeyDown={handleKeyDown}
-          autoComplete="email"
-          className="w-full mb-4 px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#0F766E] outline-none"
-        />
-
-        <input
-          id="password"
-          name="password"
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          onKeyDown={handleKeyDown}
-          autoComplete="new-password"
-          className="w-full mb-2 px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#0F766E] outline-none"
-        />
-
-        {/* INFO PASSWORD */}
-        <div className="flex items-center justify-between mb-6 text-xs text-gray-500">
-          <span>🔒 Password kamu dienkripsi dan aman</span>
-          <button
-            onClick={() => setShowInfo(true)}
-            className="w-6 h-6 flex items-center justify-center rounded-full bg-[#0F766E] text-white text-xs font-bold"
-          >
-            ?
-          </button>
+        {/* BRAND TOP */}
+        <div className="mb-6 text-center">
+          <h1 className="text-3xl font-bold text-[#0F766E]">
+            CODKampus
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Marketplace mahasiswa terpercaya
+          </p>
         </div>
 
-        <button
-          type="button"
-          onClick={register}
-          disabled={loading}
-          className="w-full bg-[#F59E0B] text-white py-3 rounded-full font-semibold hover:scale-105 transition disabled:opacity-60"
-        >
-          {loading ? "Loading..." : "Daftar"}
-        </button>
+        {/* CARD */}
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
 
-        <p className="text-center text-sm text-gray-500 mt-4">
-          Sudah punya akun?{" "}
-          <span
-            onClick={() => router.push("/login")}
-            className="text-[#0F766E] cursor-pointer hover:underline"
-          >
-            Login
-          </span>
-        </p>
+          {/* ACCENT BAR */}
+          <div className="h-2 bg-gradient-to-r from-[#0F766E] to-[#F59E0B]" />
+
+          <div className="p-8">
+
+            {/* TITLE */}
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Buat Akun Baru
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Mulai jual & beli dengan aman
+              </p>
+            </div>
+
+            {/* GOOGLE LOGIN */}
+            <button
+              onClick={loginWithGoogle}
+              className="w-full border py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 transition font-medium"
+            >
+              <img src="/google.png" className="w-5 h-5" />
+              Lanjut dengan Google
+            </button>
+
+            {/* DIVIDER */}
+            <div className="flex items-center gap-3 my-5">
+              <div className="flex-1 h-px bg-gray-200" />
+              <span className="text-xs text-gray-400">atau daftar dengan email</span>
+              <div className="flex-1 h-px bg-gray-200" />
+            </div>
+
+            {/* EMAIL */}
+            <div className="relative mb-4">
+              <Mail className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#0F766E] focus:border-[#0F766E] outline-none transition"
+              />
+            </div>
+
+            {/* PASSWORD */}
+            <div className="relative mb-2">
+              <Lock className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#0F766E] focus:border-[#0F766E] outline-none transition"
+              />
+            </div>
+
+            {/* INFO */}
+            <div className="flex items-center justify-between mb-6 text-xs text-gray-400">
+              <span>Disimpan secara terenkripsi</span>
+              <button
+                onClick={() => setShowInfo(true)}
+                className="p-1 rounded-md hover:bg-gray-100"
+              >
+                <Info className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* CTA */}
+            <button
+              onClick={register}
+              disabled={loading}
+              className="w-full bg-[#0F766E] text-white py-3 rounded-xl font-semibold shadow-md hover:shadow-lg hover:bg-[#0d5c55] transition-all disabled:opacity-60"
+            >
+              {loading ? "Memproses..." : "Buat Akun"}
+            </button>
+
+            {/* LOGIN */}
+            <p className="text-center text-sm text-gray-500 mt-5">
+              Sudah punya akun?{" "}
+              <span
+                onClick={() => router.push("/login")}
+                className="text-[#0F766E] font-medium cursor-pointer hover:underline"
+              >
+                Masuk
+              </span>
+            </p>
+
+            {/* TERMS */}
+            <p className="text-xs text-gray-400 text-center mt-4 leading-relaxed">
+              Dengan membuat akun, Anda menyetujui Syarat & Ketentuan CODKampus
+            </p>
+
+          </div>
+        </div>
 
       </div>
 
-      {/* POPUP KEAMANAN */}
+      {/* MODAL */}
       {showInfo && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center px-4">
-          <div className="bg-white max-w-sm w-full p-6 rounded-2xl shadow-lg text-sm">
+          <div className="bg-white max-w-sm w-full p-6 rounded-xl shadow-lg text-sm">
 
-            <h2 className="text-lg font-bold text-[#0F766E] mb-3">
-              🔐 Keamanan Akun
+            <h2 className="text-lg font-semibold text-[#0F766E] mb-3">
+              Keamanan Akun
             </h2>
 
             <ul className="space-y-2 text-gray-600">
-              <li>• Password disimpan dalam bentuk enkripsi</li>
-              <li>• Jangan bagikan password ke siapapun</li>
-              <li>• Gunakan kombinasi huruf & angka</li>
-              <li>• Minimal 6 karakter</li>
-              <li>• Hindari password seperti 123456</li>
+              <li>Password disimpan dalam bentuk terenkripsi</li>
+              <li>Jangan bagikan password ke siapa pun</li>
+              <li>Gunakan kombinasi huruf dan angka</li>
+              <li>Minimal 6 karakter</li>
             </ul>
 
             <button
               onClick={() => setShowInfo(false)}
-              className="mt-4 w-full bg-[#0F766E] text-white py-2 rounded-full"
+              className="mt-4 w-full bg-[#0F766E] text-white py-2 rounded-xl"
             >
               Mengerti
             </button>
