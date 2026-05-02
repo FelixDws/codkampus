@@ -67,6 +67,11 @@ export default function Settings() {
     }
   };
 
+  const handleLogout = async () => {
+  await supabase.auth.signOut();
+  window.location.href = "/login";
+};
+
   if (loading) {
     return (
       <>
@@ -87,7 +92,7 @@ export default function Settings() {
 
           {/* SIDEBAR */}
           <div className="sm:w-56 flex sm:flex-col gap-2 text-sm">
-            {["security","terms & conditions", "credits"].map((t) => (
+            {["Profile","Security","Terms & Conditions", "Credits"].map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -104,6 +109,35 @@ export default function Settings() {
 
           {/* CONTENT */}
           <div className="flex-1 space-y-6">
+
+            {tab === "profile" && (
+    <div className="card space-y-6">
+
+      <h2 className="font-semibold text-lg">Profile</h2>
+
+      <div>
+        <p className="text-xs text-gray-400 mb-1">Email</p>
+        <div className="border rounded-lg px-4 py-2 text-sm bg-gray-50">
+          {user?.email}
+        </div>
+      </div>
+
+      <div>
+        <p className="text-xs text-gray-400 mb-1">Login Method</p>
+        <div className="border rounded-lg px-4 py-2 text-sm bg-gray-50">
+          {isGoogle ? "Google Account" : "Email & Password"}
+        </div>
+      </div>
+
+      <button
+        onClick={handleLogout}
+        className="w-full bg-red-500 text-white py-2.5 rounded-lg font-medium hover:bg-red-600 transition"
+      >
+        Logout
+      </button>
+
+    </div>
+  )}
 
             {tab === "security" && (
               <div className="card space-y-6">
