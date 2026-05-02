@@ -3,7 +3,7 @@ import supabase from "../lib/supabase";
 import Navbar from "../components/Navbar";
 
 export default function Settings() {
-  const [tab, setTab] = useState("security");
+  const [tab, setTab] = useState("Profile");
   const [user, setUser] = useState(null);
 
   const [settings, setSettings] = useState({
@@ -141,7 +141,7 @@ const isGoogle = user?.app_metadata?.provider === "google";
     </div>
   )}
 
-            {tab === "security" && (
+            {tab === "Security" && (
               <div className="card space-y-6">
                 <h2 className="font-medium text-lg">Security</h2>
 
@@ -166,7 +166,7 @@ const isGoogle = user?.app_metadata?.provider === "google";
               </div>
             )}
 
-            {tab === "terms & conditions" && (
+            {tab === "Terms & Conditions" && (
   <div className="card space-y-6">
     <h2 className="font-semibold text-lg">Terms & Conditions</h2>
 
@@ -330,7 +330,7 @@ const isGoogle = user?.app_metadata?.provider === "google";
   </div>
 )}
 
-            {tab === "credits" && (
+            {tab === "Credits" && (
   <div className="card space-y-6">
     <h2 className="font-medium text-lg">Credits</h2>
 
