@@ -118,11 +118,9 @@ if (image) {
     return;
   }
 
-  if (image.size > 2 * 1024 * 1024) {
-    alert("Max 2MB");
-    setLoading(false);
-    return;
-  }
+  if (image.size > 1 * 1024 * 1024) {
+  compressedImage = await imageCompression(image, options);
+}
 
   const fileName = `${Date.now()}-${Math.random()}-${image.name}`;
   let compressedImage = image;
@@ -289,19 +287,23 @@ const { error } = await supabase.from("market").insert([
           className="input mb-2 w-full"
         />
 
-        <input
-          type="file"
-          accept="image/jpeg"
-          onChange={(e) => {
-  const file = e.target.files[0];
-  setImage(file);
+        <label className="btn-main w-full text-center cursor-pointer mb-3">
+  📸 Ambil / Upload Foto
+  <input
+    type="file"
+    accept="image/*"
+    capture="environment"
+    onChange={(e) => {
+      const file = e.target.files[0];
+      setImage(file);
 
-  if (file) {
-    setPreview(URL.createObjectURL(file));
-  }
-}}
-          className="mb-3"
-        />
+      if (file) {
+        setPreview(URL.createObjectURL(file));
+      }
+    }}
+    className="hidden"
+  />
+</label>
 
         {preview && (
   <img
