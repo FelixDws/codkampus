@@ -72,6 +72,8 @@ export default function Settings() {
   window.location.href = "/login";
 };
 
+const isGoogle = user?.app_metadata?.provider === "google";
+
   if (loading) {
     return (
       <>
@@ -110,7 +112,7 @@ export default function Settings() {
           {/* CONTENT */}
           <div className="flex-1 space-y-6">
 
-            {tab === "profile" && (
+            {tab === "Profile" && (
     <div className="card space-y-6">
 
       <h2 className="font-semibold text-lg">Profile</h2>
