@@ -13,6 +13,22 @@ export default function ProductDetail() {
   const [seller, setSeller] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showImage, setShowImage] = useState(false);
+  const [myLocation, setMyLocation] = useState(null);
+  const [distance, setDistance] = useState(null);
+
+  const getDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) *
+    Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) ** 2;
+
+  return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
 
   const formatPhone = (num) => {
     if (!num) return "";
@@ -24,6 +40,16 @@ export default function ProductDetail() {
     : "";
 
   useEffect(() => {
+  navigator.geolocation.getCurrentPosition((pos) => {
+    setMyLocation({
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude,
+    });
+  });
+}, []);
+  
+  
+    useEffect(() => {
     if (!id) return;
 
     const fetchData = async () => {
@@ -52,6 +78,19 @@ export default function ProductDetail() {
 
     fetchData();
   }, [id]);
+
+  useEffect(() => {
+  if (!myLocation || !seller?.latitude) return;
+
+  const d = getDistance(
+    myLocation.lat,
+    myLocation.lng,
+    seller.latitude,
+    seller.longitude
+  );
+
+  setDistance(d);
+}, [myLocation, seller]);
 
   if (loading) {
     return <p className="p-6 text-center text-gray-400">Loading...</p>;
@@ -121,26 +160,38 @@ export default function ProductDetail() {
 
             {/* SELLER */}
             {seller && (
-              <Link href={`/user/${seller.id}`}>
-                <div className="flex items-center gap-3 border rounded-xl p-3 hover:bg-gray-50 cursor-pointer transition">
+  <Link href={`/user/${seller.id}`}>
+    <div className="flex items-center gap-3 border rounded-xl p-3 hover:bg-gray-50 cursor-pointer transition">
 
-                  <img
-                    src={seller.avatar_url || "https://ui-avatars.com/api/?name=User"}
-                    className="w-10 h-10 rounded-full object-cover border"
-                  />
+      <img
+        src={seller.avatar_url || "https://ui-avatars.com/api/?name=User"}
+        className="w-10 h-10 rounded-full object-cover border"
+      />
 
-                  <div>
-                    <p className="text-sm font-medium text-gray-800">
-                      {seller.name || seller.email}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Lihat profil penjual
-                    </p>
-                  </div>
+      <div className="flex-1">
+        <p className="text-sm font-medium text-gray-800">
+          {seller.name || seller.email}
+        </p>
 
-                </div>
-              </Link>
-            )}
+        {/* 🔥 LOKASI + JARAK */}
+        <p className="text-xs text-gray-500">
+          📍 {seller.location_name || "Lokasi tidak diketahui"}
+
+          {distance && (
+            <>
+              {" "}•{" "}
+              {distance < 1
+                ? `${Math.round(distance * 1000)} m`
+                : `${distance.toFixed(1)} km`}
+            </>
+          )}
+        </p>
+
+      </div>
+
+    </div>
+  </Link>
+)}
 
             {/* ACTION */}
             {seller?.phone && (

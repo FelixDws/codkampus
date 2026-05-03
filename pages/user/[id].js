@@ -13,6 +13,26 @@ export default function UserProfile() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [myLocation, setMyLocation] = useState(null);
+  const [distance, setDistance] = useState(null);
+
+  // ======================
+  // DISTANCE FUNCTION
+  // ======================
+  const getDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(lat1 * Math.PI / 180) *
+      Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) ** 2;
+
+    return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  };
+
   const formatPhone = (num) => {
     if (!num) return "";
     return num.replace(/^0/, "62").replace(/\D/g, "");
@@ -22,13 +42,28 @@ export default function UserProfile() {
     ? `https://wa.me/${formatPhone(profile.phone)}?text=Halo%20saya%20tertarik%20dengan%20produkmu`
     : "";
 
+  // ======================
+  // GET USER LOCATION
+  // ======================
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition((pos) => {
+      setMyLocation({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+      });
+    });
+  }, []);
+
+  // ======================
+  // FETCH DATA
+  // ======================
   useEffect(() => {
     if (!id) return;
 
     const fetchData = async () => {
       setLoading(true);
 
-      // 🔥 PROFILE
+      // PROFILE
       const { data: userData } = await supabase
         .from("users")
         .select("*")
@@ -37,7 +72,7 @@ export default function UserProfile() {
 
       setProfile(userData);
 
-      // 🔥 PRODUK USER
+      // PRODUK USER
       const { data: userProducts } = await supabase
         .from("market")
         .select("*")
@@ -51,6 +86,26 @@ export default function UserProfile() {
 
     fetchData();
   }, [id]);
+
+  // ======================
+  // CALCULATE DISTANCE
+  // ======================
+  useEffect(() => {
+    if (
+      !myLocation ||
+      !profile?.latitude ||
+      !profile?.longitude
+    ) return;
+
+    const d = getDistance(
+      myLocation.lat,
+      myLocation.lng,
+      profile.latitude,
+      profile.longitude
+    );
+
+    setDistance(d);
+  }, [myLocation, profile]);
 
   if (loading) {
     return <p className="p-6 text-center text-gray-400">Loading...</p>;
@@ -91,6 +146,7 @@ export default function UserProfile() {
             {profile.name || "User"}
           </h1>
 
+          {/* 🔥 BADGE (TETAP ADA) */}
           {profile.badge && (
             <div className="mt-2 flex justify-center">
               <span
@@ -104,6 +160,19 @@ export default function UserProfile() {
               </span>
             </div>
           )}
+
+          {/* 🔥 LOKASI + JARAK */}
+          <p className="text-xs text-gray-500 mt-2">
+            📍 {profile.location_name || "Lokasi tidak diketahui"}
+            {distance && (
+              <>
+                {" "}•{" "}
+                {distance < 1
+                  ? `${Math.round(distance * 1000)} m`
+                  : `${distance.toFixed(1)} km`}
+              </>
+            )}
+          </p>
 
           <p className="text-gray-500 text-sm mt-2">
             {profile.bio || "Belum ada bio"}
@@ -144,7 +213,7 @@ export default function UserProfile() {
 
       </div>
 
-      {/* 🔥 PRODUK */}
+      {/* PRODUK */}
       <div className="max-w-5xl mx-auto px-6 pb-10">
 
         <h2 className="text-sm font-semibold text-gray-700 mb-4">

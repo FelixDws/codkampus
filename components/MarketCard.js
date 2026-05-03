@@ -12,6 +12,7 @@ export default function MarketCard({
   onBoost,
   onEdit,
   onDelete,
+  distance // 🔥 TAMBAHAN
 }) {
   const [showImage, setShowImage] = useState(false);
 
@@ -115,6 +116,22 @@ export default function MarketCard({
           )}
         </p>
 
+        {/* 🔥 LOKASI + JARAK (TAMBAHAN) */}
+        {seller?.location_name && (
+          <p className="text-xs text-gray-500 mt-1">
+            📍 {seller.location_name}
+
+            {distance && (
+              <>
+                {" "}•{" "}
+                {distance < 1
+                  ? `${Math.round(distance * 1000)} m`
+                  : `${distance.toFixed(1)} km`}
+              </>
+            )}
+          </p>
+        )}
+
         {/* BADGE */}
         {seller?.badge && (
           <div className="mt-1">
@@ -132,54 +149,53 @@ export default function MarketCard({
           </div>
         )}
 
-        {/* CHAT */}
-{/* ACTION BAR */}
-<div className="flex items-center justify-between mt-4">
+        {/* ACTION BAR */}
+        <div className="flex items-center justify-between mt-4">
 
-  {/* CHAT */}
-  <button
-    onClick={() => onChat(item)}
-    className="flex items-center gap-2 text-sm font-medium text-[#0F766E] hover:underline"
-  >
-    <MessageCircle size={16} />
-    Chat
-  </button>
+          {/* CHAT */}
+          <button
+            onClick={() => onChat(item)}
+            className="flex items-center gap-2 text-sm font-medium text-[#0F766E] hover:underline"
+          >
+            <MessageCircle size={16} />
+            Chat
+          </button>
 
-  {/* OWNER ACTION */}
-  {user?.id === item.user_id && (
-    <div className="flex items-center gap-1">
+          {/* OWNER ACTION */}
+          {user?.id === item.user_id && (
+            <div className="flex items-center gap-1">
 
-      {/* BOOST */}
-      <button
-        onClick={() => onBoost(item.id)}
-        className="p-2 rounded-md text-yellow-600 hover:bg-yellow-100 transition"
-        title="Boost"
-      >
-        <Rocket size={16} />
-      </button>
+              {/* BOOST */}
+              <button
+                onClick={() => onBoost(item.id)}
+                className="p-2 rounded-md text-yellow-600 hover:bg-yellow-100 transition"
+                title="Boost"
+              >
+                <Rocket size={16} />
+              </button>
 
-      {/* EDIT */}
-      <button
-        onClick={() => onEdit(item)}
-        className="p-2 rounded-md text-gray-600 hover:bg-gray-100 transition"
-        title="Edit"
-      >
-        <Pencil size={16} />
-      </button>
+              {/* EDIT */}
+              <button
+                onClick={() => onEdit(item)}
+                className="p-2 rounded-md text-gray-600 hover:bg-gray-100 transition"
+                title="Edit"
+              >
+                <Pencil size={16} />
+              </button>
 
-      {/* DELETE */}
-      <button
-        onClick={() => onDelete(item)}
-        className="p-2 rounded-md text-red-500 hover:bg-red-100 transition"
-        title="Hapus"
-      >
-        <Trash2 size={16} />
-      </button>
+              {/* DELETE */}
+              <button
+                onClick={() => onDelete(item)}
+                className="p-2 rounded-md text-red-500 hover:bg-red-100 transition"
+                title="Hapus"
+              >
+                <Trash2 size={16} />
+              </button>
 
-    </div>
-  )}
+            </div>
+          )}
 
-</div>
+        </div>
       </div>
     </>
   );

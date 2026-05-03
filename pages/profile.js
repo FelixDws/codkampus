@@ -8,6 +8,9 @@ export default function Profile() {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [phone, setPhone] = useState("");
+  const [locationName, setLocationName] = useState("");
+  const [lat, setLat] = useState(null);
+  const [lng, setLng] = useState(null);
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -108,6 +111,9 @@ export default function Profile() {
         bio,
         avatar_url: finalAvatar,
         phone,
+        latitude: lat,
+        longitude: lng,
+        location_name: locationName,
       })
       .select()
       .maybeSingle();
@@ -124,10 +130,64 @@ export default function Profile() {
     setBio(data?.bio || "");
     setAvatarUrl(data?.avatar_url || "");
     setPhone(data?.phone || "");
+    setLat(data.latitude || null);
+    setLng(data.longitude || null);
+    setLocationName(data.location_name || "");
 
     setLoading(false);
     alert("Profil berhasil disimpan!");
   };
+
+  // ======================
+// GET LOCATION
+// ======================
+const getLocation = () => {
+  if (!navigator.geolocation) {
+    alert("Browser tidak support lokasi");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    const latitude = pos.coords.latitude;
+    const longitude = pos.coords.longitude;
+
+    setLat(latitude);
+    setLng(longitude);
+
+    // 🔥 reverse geocoding
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+      );
+      const data = await res.json();
+
+      const address = data.address;
+
+const kelurahan =
+  address.suburb ||
+  address.village ||
+  "";
+
+const kecamatan =
+  address.city_district ||
+  address.town ||
+  address.county ||
+  "";
+
+const kota =
+  address.city || "";
+
+const hasil = [kelurahan, kecamatan, kota]
+  .filter(Boolean)
+  .join(", ");
+
+setLocationName(hasil);
+
+    } catch (err) {
+      console.log("Gagal ambil lokasi nama");
+    }
+  });
+};
 
   // ======================
   // FORMAT WA
@@ -223,6 +283,29 @@ export default function Profile() {
               className="w-full mt-1 p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F766E]"
             />
           </div>
+
+          <div>
+  <label className="text-xs text-gray-500">Lokasi</label>
+
+  <button
+    onClick={getLocation}
+    className="mt-2 text-sm px-3 py-2 border rounded-lg hover:bg-gray-50"
+  >
+    Ambil Lokasi Saya
+  </button>
+
+  {locationName && (
+  <p className="text-xs text-gray-500 mt-1">
+    📍 {locationName}
+  </p>
+)}
+
+{lat && (
+  <p className="text-xs text-gray-400">
+    {lat.toFixed(4)}, {lng.toFixed(4)}
+  </p>
+)}
+</div>
 
         </div>
 

@@ -16,7 +16,36 @@ export default function Market() {
   const [showMine, setShowMine] = useState(false);
   const [editItemData, setEditItemData] = useState(null);
 
+  // 🔥 TAMBAHAN (TIDAK MENGHAPUS APAPUN)
+  const [sortBy, setSortBy] = useState("newest");
+  const [myLocation, setMyLocation] = useState(null);
+
   const router = useRouter();
+
+  // 🔥 TAMBAHAN: AMBIL LOKASI USER
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition((pos) => {
+      setMyLocation({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+      });
+    });
+  }, []);
+
+  // 🔥 TAMBAHAN: FUNCTION JARAK
+  const getDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(lat1 * Math.PI / 180) *
+      Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) ** 2;
+
+    return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  };
 
   // ⏱ TIMER
   const getRemainingTime = (expiredAt) => {
@@ -123,9 +152,9 @@ export default function Market() {
 
   // ✏ EDIT
   const editItem = (item) => {
-  setEditItemData(item);
-  setShowPopup(true);
-};
+    setEditItemData(item);
+    setShowPopup(true);
+  };
 
   // 🗑 DELETE
   const deleteItem = async (item) => {
@@ -151,7 +180,37 @@ export default function Market() {
     item.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const displayItems = showMine ? myItems : filteredItems;
+  let displayItems = showMine ? myItems : filteredItems;
+
+  // 🔥 TAMBAHAN SORTING (TIDAK MENGUBAH ASLI)
+  if (sortBy === "cheap") {
+    displayItems = [...displayItems].sort((a, b) => a.price - b.price);
+  }
+
+  if (sortBy === "near" && myLocation) {
+    displayItems = [...displayItems].sort((a, b) => {
+      const sellerA = profiles[a.user_id];
+      const sellerB = profiles[b.user_id];
+
+      if (!sellerA?.latitude || !sellerB?.latitude) return 0;
+
+      const d1 = getDistance(
+        myLocation.lat,
+        myLocation.lng,
+        sellerA.latitude,
+        sellerA.longitude
+      );
+
+      const d2 = getDistance(
+        myLocation.lat,
+        myLocation.lng,
+        sellerB.latitude,
+        sellerB.longitude
+      );
+
+      return d1 - d2;
+    });
+  }
 
   // 🔥 BOOST ACTIVE
   const isBoostActive = (item) => {
@@ -171,17 +230,61 @@ export default function Market() {
 
       <div className="max-w-5xl mx-auto px-4 py-6 relative">
 
+        {/* 🔥 TAMBAHAN SORT BUTTON */}
+        <div className="flex gap-6 mb-6 relative border-b border-gray-200">
+
+  {/* TERBARU */}
+  <button
+    onClick={() => setSortBy("newest")}
+    className={`pb-2 text-sm font-medium transition relative
+      ${sortBy === "newest" ? "text-[#0F766E]" : "text-gray-400"}
+    `}
+  >
+    Terbaru
+    {sortBy === "newest" && (
+      <span className="absolute left-0 bottom-0 w-full h-[2px] bg-[#0F766E] rounded-full" />
+    )}
+  </button>
+
+  {/* TERMURAH */}
+  <button
+    onClick={() => setSortBy("cheap")}
+    className={`pb-2 text-sm font-medium transition relative
+      ${sortBy === "cheap" ? "text-[#0F766E]" : "text-gray-400"}
+    `}
+  >
+    Termurah
+    {sortBy === "cheap" && (
+      <span className="absolute left-0 bottom-0 w-full h-[2px] bg-[#0F766E] rounded-full" />
+    )}
+  </button>
+
+  {/* TERDEKAT */}
+  <button
+    onClick={() => setSortBy("near")}
+    className={`pb-2 text-sm font-medium transition relative
+      ${sortBy === "near" ? "text-[#0F766E]" : "text-gray-400"}
+    `}
+  >
+    Terdekat
+    {sortBy === "near" && (
+      <span className="absolute left-0 bottom-0 w-full h-[2px] bg-[#0F766E] rounded-full" />
+    )}
+  </button>
+
+</div>
+
         {/* POPUP */}
         <SellPopup
-  show={showPopup}
-  onClose={() => {
-    setShowPopup(false);
-    setEditItemData(null); // 🔥 reset biar gak nyangkut
-  }}
-  onSuccess={getItems}
-  user={user}
-  editItem={editItemData} // 🔥 INI YANG KURANG
-/>
+          show={showPopup}
+          onClose={() => {
+            setShowPopup(false);
+            setEditItemData(null);
+          }}
+          onSuccess={getItems}
+          user={user}
+          editItem={editItemData}
+        />
 
         {/* HEADER */}
         <div className="mb-6">
@@ -209,9 +312,9 @@ export default function Market() {
 
               <button
                 onClick={() => {
-  setEditItemData(null);
-  setShowPopup(true);
-}}
+                  setEditItemData(null);
+                  setShowPopup(true);
+                }}
                 className="px-4 py-2 bg-[#0F766E] text-white rounded-xl text-sm font-medium hover:opacity-90 transition"
               >
                 + Jual
@@ -237,20 +340,35 @@ export default function Market() {
             </div>
           )}
 
-          {displayItems.map((item) => (
-            <MarketCard
-              key={item.id}
-              item={item}
-              seller={profiles[item.user_id]}
-              user={user}
-              isBoostActive={isBoostActive}
-              getRemainingTime={getRemainingTime}
-              onChat={chatSeller}
-              onBoost={handleBoost}
-              onEdit={editItem}
-              onDelete={deleteItem}
-            />
-          ))}
+          {displayItems.map((item) => {
+            const seller = profiles[item.user_id];
+
+            const distance =
+              seller?.latitude && myLocation
+                ? getDistance(
+                    myLocation.lat,
+                    myLocation.lng,
+                    seller.latitude,
+                    seller.longitude
+                  )
+                : null;
+
+            return (
+              <MarketCard
+                key={item.id}
+                item={item}
+                seller={seller}
+                user={user}
+                distance={distance}
+                isBoostActive={isBoostActive}
+                getRemainingTime={getRemainingTime}
+                onChat={chatSeller}
+                onBoost={handleBoost}
+                onEdit={editItem}
+                onDelete={deleteItem}
+              />
+            );
+          })}
 
         </div>
       </div>

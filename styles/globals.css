@@ -85,3 +85,30 @@
     animation: slideLeft 0.3s ease-out;
   }
 }
+
+@keyframes scrollSmooth {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.4;
+  }
+  30% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(28px);
+    opacity: 0;
+  }
+}
+
+.animate-scroll-smooth {
+  animation: scrollSmooth 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
